@@ -9,3 +9,4 @@ minimumReleaseAgeExclude:
   - '@turbo/windows-64@2.11.3'
   - '@turbo/windows-arm64@2.11.3'
   - turbo@2.11.3
+  - '@costor/ui@2.0.5 || 2.0.6'
