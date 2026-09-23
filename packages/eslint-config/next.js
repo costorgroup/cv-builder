@@ -36,4 +36,20 @@ export const nextJsConfig = [
     },
   },
   pluginReactHooks.configs.flat.recommended,
+  {
+    // Arrow functions only: no `function` declarations or expressions
+    // (class and object methods are still allowed).
+    files: ["**/*.{js,jsx,mjs,cjs,ts,tsx}"],
+    rules: {
+      "func-style": ["error", "expression"],
+      "prefer-arrow-callback": "error",
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: ":not(MethodDefinition, Property) > FunctionExpression",
+          message: "Use an arrow function instead of a function expression.",
+        },
+      ],
+    },
+  },
 ];
