@@ -1,6 +1,6 @@
 import type { TCvDocument } from "@/providers/cv-provider/types";
 
-// Handshake between the PDF route (Puppeteer) and the /print page.
+// Handshake between the API's PDF renderer (Puppeteer) and the /print page.
 declare global {
   interface Window {
     /** The CV to render; set by Puppeteer before the page loads. */

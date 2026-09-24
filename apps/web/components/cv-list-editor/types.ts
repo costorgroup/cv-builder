@@ -16,7 +16,9 @@ export type TCvListEditorProps<K extends TCvListKey> = Omit<
   getSummary: (item: TCvListItem<K>) => string;
   newItemLabel: string;
   addLabel: string;
-  emptyText: string;
+  /** Shown in place of the list while it has no entries. */
+  emptyTitle: string;
+  emptyDescription: string;
   /** Fields of one entry; `item` holds its live values. */
   renderFields: (
     item: TCvListItem<K>,

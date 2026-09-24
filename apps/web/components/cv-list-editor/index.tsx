@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Accordion, Button, Flex, Small } from "@costor/ui";
+import {
+  Accordion,
+  Button,
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+  Flex,
+} from "@costor/ui";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import type { TCvFieldName } from "@/components/cv-form-fields/types";
 import { createCvItem } from "@/providers/cv-provider/items";
@@ -31,7 +40,8 @@ export const CvListEditor = <K extends TCvListKey>({
   getSummary,
   newItemLabel,
   addLabel,
-  emptyText,
+  emptyTitle,
+  emptyDescription,
   renderFields,
   ...props
 }: TCvListEditorProps<K>) => {
@@ -54,68 +64,81 @@ export const CvListEditor = <K extends TCvListKey>({
     setAddedId(item.id);
   };
 
+  const addButton = (
+    <Button variant="solid" color="primary" fullWidth onClick={onAdd}>
+      {addLabel}
+    </Button>
+  );
+
+  if (fields.length === 0) {
+    return (
+      <Empty variant="surface" {...props}>
+        <EmptyHeader>
+          <EmptyTitle>{emptyTitle}</EmptyTitle>
+          <EmptyDescription>{emptyDescription}</EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>{addButton}</EmptyContent>
+      </Empty>
+    );
+  }
+
   return (
     <Flex direction="column" gap={2.5} {...props}>
-      {fields.length === 0 && <Small>{emptyText}</Small>}
-      {fields.length > 0 && (
-        <SCvListEditorDragGroup
-          lockAxis="y"
-          color="primary"
-          dragHandleSelector={`.${CV_LIST_EDITOR_HANDLE_CLASS}`}
-          onDrop={({ removedIndex, addedIndex }) => {
-            if (removedIndex !== null && addedIndex !== null) {
-              move(removedIndex, addedIndex);
-            }
-          }}
-        >
-          {fields.map((field, index) => {
-            const item = items[index] ?? (field as unknown as TCvListItem<K>);
-            const summary = getSummary(item).trim() || newItemLabel;
-            const name = (key: string) =>
-              `${listKey}.${index}.${key}` as TCvFieldName;
-            return (
-              <SCvListEditorItem key={field.key}>
-                <Accordion
-                  summary={
-                    <SCvListEditorSummary>
-                      <SCvListEditorHandle
-                        className={CV_LIST_EDITOR_HANDLE_CLASS}
-                        title="Drag to reorder"
-                        aria-hidden
-                        // Grabbing the handle shouldn't open or close the entry.
-                        onClick={(event) => event.stopPropagation()}
-                      />
-                      {summary}
-                    </SCvListEditorSummary>
-                  }
-                  defaultExpanded={item.id === addedId}
-                  color="primary"
-                  variant="subtle"
-                  colorScope="summary"
-                  radius="xs"
-                >
-                  <SCvListEditorFields columns={2} gap={2}>
-                    {renderFields(item, name)}
-                  </SCvListEditorFields>
-                  <SCvListEditorActions justify="flex-end">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      color="error"
-                      onClick={() => remove(index)}
-                    >
-                      Remove
-                    </Button>
-                  </SCvListEditorActions>
-                </Accordion>
-              </SCvListEditorItem>
-            );
-          })}
-        </SCvListEditorDragGroup>
-      )}
-      <Button variant="solid" color="primary" fullWidth onClick={onAdd}>
-        {addLabel}
-      </Button>
+      <SCvListEditorDragGroup
+        lockAxis="y"
+        color="primary"
+        dragHandleSelector={`.${CV_LIST_EDITOR_HANDLE_CLASS}`}
+        onDrop={({ removedIndex, addedIndex }) => {
+          if (removedIndex !== null && addedIndex !== null) {
+            move(removedIndex, addedIndex);
+          }
+        }}
+      >
+        {fields.map((field, index) => {
+          const item = items[index] ?? (field as unknown as TCvListItem<K>);
+          const summary = getSummary(item).trim() || newItemLabel;
+          const name = (key: string) =>
+            `${listKey}.${index}.${key}` as TCvFieldName;
+          return (
+            <SCvListEditorItem key={field.key}>
+              <Accordion
+                summary={
+                  <SCvListEditorSummary>
+                    <SCvListEditorHandle
+                      className={CV_LIST_EDITOR_HANDLE_CLASS}
+                      title="Drag to reorder"
+                      aria-hidden
+                      // Grabbing the handle shouldn't open or close the entry.
+                      onClick={(event) => event.stopPropagation()}
+                    />
+                    {summary}
+                  </SCvListEditorSummary>
+                }
+                defaultExpanded={item.id === addedId}
+                color="primary"
+                variant="subtle"
+                colorScope="summary"
+                radius="xs"
+              >
+                <SCvListEditorFields columns={2} gap={2}>
+                  {renderFields(item, name)}
+                </SCvListEditorFields>
+                <SCvListEditorActions justify="flex-end">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    color="error"
+                    onClick={() => remove(index)}
+                  >
+                    Remove
+                  </Button>
+                </SCvListEditorActions>
+              </Accordion>
+            </SCvListEditorItem>
+          );
+        })}
+      </SCvListEditorDragGroup>
+      {addButton}
     </Flex>
   );
 };

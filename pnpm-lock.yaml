@@ -29,6 +29,9 @@ importers:
       '@nestjs/platform-express':
         specifier: ^12.0.1
         version: 12.0.4(@nestjs/common@12.0.4(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(@nestjs/core@12.0.4)(supports-color@7.2.0)
+      puppeteer:
+        specifier: ^25.11.0
+        version: 25.11.0
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -85,8 +88,8 @@ importers:
   apps/web:
     dependencies:
       '@costor/ui':
-        specifier: ^2.0.11
-        version: 2.0.11(@emotion/cache@11.14.0)(@emotion/css@11.13.5(supports-color@7.2.0))(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/extensions@3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/pm@3.31.3))(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^2.0.12
+        version: 2.0.12(@emotion/cache@11.14.0)(@emotion/css@11.13.5(supports-color@7.2.0))(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/extensions@3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/pm@3.31.3))(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@emotion/cache':
         specifier: ^11.14.0
         version: 11.14.0
@@ -102,9 +105,6 @@ importers:
       next:
         specifier: 16.3.4
         version: 16.3.4(@babel/core@8.0.1)(@types/node@26.4.1)(babel-plugin-macros@3.1.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      puppeteer:
-        specifier: ^25.11.0
-        version: 25.11.0
       react:
         specifier: 19.2.8
         version: 19.2.8
@@ -415,8 +415,8 @@ packages:
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
     engines: {node: '>=0.1.90'}
 
-  '@costor/ui@2.0.11':
-    resolution: {integrity: sha512-VAQNUwuZZ753qp5tI+B2xJAuuXoCzMOrYTHs7wLJbMI7EJrtN/iWEZ4Wcd+xJGRPFoZt1k8B0OPFu7nT0D3S1A==}
+  '@costor/ui@2.0.12':
+    resolution: {integrity: sha512-bliP2SmouQGtRHfoTvtHWSsMkjDAb4aLBf49wVv67RQ0MfWafaWc1Kyr/DEawrmpEA5NDSUqnxTA411oy//hTQ==}
     peerDependencies:
       '@emotion/cache': ^11.0.0
       '@emotion/css': ^11.0.0
@@ -4000,7 +4000,7 @@ snapshots:
   '@colors/colors@1.5.0':
     optional: true
 
-  '@costor/ui@2.0.11(@emotion/cache@11.14.0)(@emotion/css@11.13.5(supports-color@7.2.0))(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/extensions@3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/pm@3.31.3))(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@costor/ui@2.0.12(@emotion/cache@11.14.0)(@emotion/css@11.13.5(supports-color@7.2.0))(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/extensions@3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/pm@3.31.3))(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
       '@emotion/cache': 11.14.0
       '@emotion/css': 11.13.5(supports-color@7.2.0)

@@ -11,7 +11,8 @@ const CertificatesPage = ({ ...props }: TCertificatesPageProps) => (
     getSummary={({ name }) => name}
     newItemLabel="New certificate"
     addLabel="Add certificate"
-    emptyText="No certificates added yet."
+    emptyTitle="No certificates added yet"
+    emptyDescription="Add certifications, licenses and awards."
     renderFields={(_, name) => (
       <>
         <GridCell colSpan={2}>

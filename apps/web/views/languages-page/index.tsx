@@ -12,7 +12,8 @@ const LanguagesPage = ({ ...props }: TLanguagesPageProps) => (
     getSummary={({ name }) => name}
     newItemLabel="New language"
     addLabel="Add language"
-    emptyText="No languages added yet."
+    emptyTitle="No languages added yet"
+    emptyDescription="Add the languages you speak and how well."
     renderFields={(_, name) => (
       <>
         <GridCell colSpan={2}>

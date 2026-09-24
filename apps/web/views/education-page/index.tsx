@@ -18,7 +18,8 @@ const EducationPage = ({ ...props }: TEducationPageProps) => (
     }
     newItemLabel="New education"
     addLabel="Add education"
-    emptyText="No education added yet."
+    emptyTitle="No education added yet"
+    emptyDescription="Add the schools, degrees and courses you've completed."
     renderFields={(item, name) => (
       <>
         <GridCell colSpan={2}>

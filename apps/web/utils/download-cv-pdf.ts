@@ -1,17 +1,20 @@
 import type { TCvDocument } from "@/providers/cv-provider/types";
 
+/** Where the Nest API that renders PDFs is served. */
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+
 /** Characters that aren't allowed in file names on common systems. */
 const UNSAFE_FILE_NAME = /[\\/:*?"<>|]+/g;
 
 /**
- * Asks the server to render the CV as a PDF and downloads it as
+ * Asks the API to render the CV as a PDF and downloads it as
  * `<fileName>.pdf`. Rejects if the PDF couldn't be made.
  */
 export const downloadCvPdf = async (
   cvDocument: TCvDocument,
   fileName: string,
 ) => {
-  const response = await fetch("/api/cv/pdf", {
+  const response = await fetch(`${API_URL}/cv/pdf`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(cvDocument),

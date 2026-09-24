@@ -18,7 +18,8 @@ const WorkExperiencePage = ({ ...props }: TWorkExperiencePageProps) => (
     }
     newItemLabel="New experience"
     addLabel="Add experience"
-    emptyText="No experience added yet."
+    emptyTitle="No experience added yet"
+    emptyDescription="Add the roles you've held, starting with the most recent."
     renderFields={(item, name) => (
       <>
         <GridCell colSpan={2}>

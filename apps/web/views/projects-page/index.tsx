@@ -15,7 +15,8 @@ const ProjectsPage = ({ ...props }: TProjectsPageProps) => (
     getSummary={({ name }) => name}
     newItemLabel="New project"
     addLabel="Add project"
-    emptyText="No projects added yet."
+    emptyTitle="No projects added yet"
+    emptyDescription="Add projects that show what you can do."
     renderFields={(item, name) => (
       <>
         <GridCell colSpan={2}>

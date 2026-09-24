@@ -12,7 +12,8 @@ const SkillsPage = ({ ...props }: TSkillsPageProps) => (
     getSummary={({ name }) => name}
     newItemLabel="New skill"
     addLabel="Add skill"
-    emptyText="No skills added yet."
+    emptyTitle="No skills added yet"
+    emptyDescription="Add the skills you want employers to notice."
     renderFields={(_, name) => (
       <>
         <GridCell colSpan={2}>

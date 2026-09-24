@@ -4,8 +4,9 @@ import { useSyncExternalStore } from "react";
 import { CvDisplay } from "@/components";
 import { CvProvider } from "@/providers/cv-provider";
 
-// Only the CV pages, at A4 size. The PDF route opens this page in headless
-// Chrome, hands it the CV through `window.__CV_DOCUMENT__` and prints it.
+// Only the CV pages, at A4 size. The API's PDF renderer opens this page in
+// headless Chrome, hands it the CV through `window.__CV_DOCUMENT__` and prints
+// it.
 const printCss = `
   @page { size: A4; margin: 0; }
   html, body { margin: 0; padding: 0; background: #ffffff; }

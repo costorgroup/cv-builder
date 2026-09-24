@@ -74,7 +74,7 @@ export const CvExportModal = ({ open, onClose }: TCvExportModalProps) => {
       open={open}
       onClose={onClose}
       title="Your CV is ready"
-      size="xl"
+      size="lg"
       scrollable
       actions={
         <>
