@@ -7,4 +7,3 @@ export const SAppNavigation = styled(Navigation)`
     background-color: ${theme.surfaces.background};
   `}
 `;
-

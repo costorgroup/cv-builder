@@ -1,2 +1,11 @@
-export * from "./home-page";
-export * from "./manage-cv-page";
+export { default as HomePage } from "@/views/home-page";
+export { default as PersonalInformationPage } from "@/views/personal-information-page";
+export { default as WorkExperiencePage } from "@/views/work-experience-page";
+export { default as EducationPage } from "@/views/education-page";
+export { default as SkillsPage } from "@/views/skills-page";
+export { default as LanguagesPage } from "@/views/languages-page";
+export { default as ProjectsPage } from "@/views/projects-page";
+export { default as CertificatesPage } from "@/views/certificates-page";
+export { default as AppearancePage } from "@/views/appearance-page";
+export { default as TemplatesPage } from "@/views/templates-page";
+export { default as SocialMediaPage } from "@/views/social-media-page";
