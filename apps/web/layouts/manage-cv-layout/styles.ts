@@ -13,7 +13,6 @@ import {
   ScrollArea,
   scrollAreaClasses,
 } from "@costor/ui";
-import Link from "next/link";
 
 /** Tinted backdrop behind CV pages (the editor workspace, the export preview). */
 export const cvWorkspaceBackground = (theme: Theme) =>
@@ -29,7 +28,7 @@ export const SManageCvLayout = styled.div`
   `}
 `;
 
-export const SManageCvLayoutCenter = styled(Box)`
+export const SManageCvLayoutPreview = styled(Box)`
   ${({ theme }) => `
     padding: ${theme.spacing(15)};
     width: 100%;
@@ -38,6 +37,13 @@ export const SManageCvLayoutCenter = styled(Box)`
     &::-webkit-scrollbar {
       display: none;
     }
+  `}
+`;
+
+export const SManageCvLayoutPreviewCenter = styled(Box)`
+  ${({ theme }) => `
+    max-width: 800px;
+    margin: auto;
   `}
 `;
 
@@ -56,23 +62,6 @@ export const SManageCvLayoutDocumentNameInput = styled.input`
     background-color: transparent;
     padding: 0;
     margin: 0;
-  `}
-`;
-
-export const SManageCvLayoutNavLink = styled(Link, {
-  shouldForwardProp: (prop) => !["active"].includes(prop),
-})<{ active?: boolean }>`
-  ${({ theme, active }) => `
-    text-decoration: none;
-    padding: ${theme.spacing(2.5)};
-    border-radius: ${theme.radius.sm};
-    color: ${theme.palette.default.main};
-    position: relative;
-    border-left-style: solid;
-    border-left-width: 5px;
-    border-left-color: ${active ? theme.palette.primary.main : "transparent"};
-    background-color: ${active ? `${theme.palette.primary.main}15` : "transparent"};
-    transition: border-left-color 300ms ease-in-out, background-color 300ms ease-in-out;
   `}
 `;
 
@@ -119,6 +108,16 @@ export const SManageCvLayoutNavContent = styled(Flex)`
   `}
 `;
 
+/** Actions at the bottom of the nav rail (e.g. the theme toggle). */
+export const SManageCvLayoutNavActions = styled.div`
+  ${({ theme }) => `
+    display: flex;
+    justify-content: center;
+    margin-top: auto;
+    padding-top: ${theme.spacing(2)};
+  `}
+`;
+
 /** Logo + "CV Builder" in the sidebar header. */
 export const SManageCvLayoutBrand = styled.div`
   ${({ theme }) => `
@@ -156,5 +155,22 @@ export const SManageCvLayoutContent = styled(ScrollArea)`
     width: 100%;
     height: 100%;
     padding: ${theme.spacing(4)};
+  `}
+`;
+
+/** Centers a message (e.g. "CV not found") on the workspace background. */
+export const SManageCvLayoutMessage = styled.div`
+  ${({ theme }) => `
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: ${theme.spacing(5)};
+    background-color: ${cvWorkspaceBackground(theme)};
+
+    & > * {
+      width: 100%;
+      max-width: 520px;
+    }
   `}
 `;

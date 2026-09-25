@@ -13,7 +13,11 @@ export type TCvPersonalInformation = {
   photo: string;
   email: string;
   phone: string;
-  address: string;
+  /** Location, as picked from the API's country/state/city lists. */
+  country: string;
+  state: string;
+  city: string;
+  zip: string;
 };
 
 export type TCvSocialMedia = {
@@ -80,6 +84,12 @@ export type TCvCertificate = {
   url: string;
 };
 
+/** A hobby or interest, e.g. "Photography". */
+export type TCvInterest = {
+  id: string;
+  name: string;
+};
+
 export type TCvData = {
   personalInformation: TCvPersonalInformation;
   socialMedia: TCvSocialMedia;
@@ -89,6 +99,7 @@ export type TCvData = {
   languages: TCvLanguage[];
   projects: TCvProject[];
   certificates: TCvCertificate[];
+  interests: TCvInterest[];
 };
 
 /** Sections that hold a single set of fields. */
@@ -151,4 +162,6 @@ export type TCvProviderProps = {
   children: ReactNode;
   initialData?: TCvData;
   initialAppearance?: Partial<TCvAppearance>;
+  /** A saved CV's name; empty means "<first> <last> CV". */
+  initialFileName?: string;
 };

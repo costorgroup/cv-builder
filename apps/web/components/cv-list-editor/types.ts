@@ -9,14 +9,16 @@ export type TCvListEditorFieldName<K extends TCvListKey> = (
 
 export type TCvListEditorProps<K extends TCvListKey> = Omit<
   HTMLAttributes<HTMLDivElement>,
-  "children"
+  // Taken by AccordionGroup with other meanings.
+  "children" | "color" | "defaultValue"
 > & {
   listKey: K;
-  /** Accordion title for an entry; falls back to `newItemLabel`. */
+  /** Row title for an entry; falls back to `newItemLabel`. */
   getSummary: (item: TCvListItem<K>) => string;
   newItemLabel: string;
+  /** Accessible name of the "+" row. */
   addLabel: string;
-  /** Shown in place of the list while it has no entries. */
+  /** Shown above the "+" row while the list has no entries. */
   emptyTitle: string;
   emptyDescription: string;
   /** Fields of one entry; `item` holds its live values. */

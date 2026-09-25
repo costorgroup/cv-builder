@@ -20,7 +20,7 @@ export const cvRequiredFields: {
     "lastName",
     "email",
     "phone",
-    "address",
+    "country",
     "aboutMe",
   ],
   socialMedia: [],
@@ -30,6 +30,7 @@ export const cvRequiredFields: {
   languages: ["name"],
   projects: ["name"],
   certificates: ["name"],
+  interests: ["name"],
 };
 
 /**
@@ -57,6 +58,7 @@ const countedListFields: { [K in TCvListKey]: (keyof TCvListItem<K>)[] } = {
   languages: ["name"],
   projects: ["name", "role", "url", "startDate", "endDate", "description"],
   certificates: ["name", "issuer", "date", "url"],
+  interests: ["name"],
 };
 
 const listKeys = Object.keys(countedListFields) as TCvListKey[];

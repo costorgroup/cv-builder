@@ -1,39 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Accordion,
-  Button,
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-  Flex,
-} from "@costor/ui";
+import { Accordion, AccordionGroup, IconButton } from "@costor/ui";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import type { TCvFieldName } from "@/components/cv-form-fields/types";
+import { DuplicateIcon, TrashIcon } from "@/components/cv-list-editor/icons";
+import {
+  SCvListEditorEmpty,
+  SCvListEditorFields,
+} from "@/components/cv-list-editor/styles";
+import type { TCvListEditorProps } from "@/components/cv-list-editor/types";
+import { useConfirm } from "@/providers/confirm-provider";
 import { createCvItem } from "@/providers/cv-provider/items";
 import type {
   TCvData,
   TCvListItem,
   TCvListKey,
 } from "@/providers/cv-provider/types";
-import {
-  CV_LIST_EDITOR_HANDLE_CLASS,
-  SCvListEditorActions,
-  SCvListEditorDragGroup,
-  SCvListEditorFields,
-  SCvListEditorHandle,
-  SCvListEditorItem,
-  SCvListEditorSummary,
-} from "@/components/cv-list-editor/styles";
-import type { TCvListEditorProps } from "@/components/cv-list-editor/types";
 
 /**
- * Editable list of CV entries (work experience, skills, ...): one accordion
- * per entry with its fields, add and remove buttons, and drag to reorder.
- * Backed by a react-hook-form field array.
+ * Editable list of CV entries (work experience, skills, ...) as an accordion
+ * group: one entry open at a time, duplicate and remove on hover, a grip to
+ * drag it and a "+" row to add one. Backed by a react-hook-form field array.
  */
 export const CvListEditor = <K extends TCvListKey>({
   listKey,
@@ -46,7 +34,7 @@ export const CvListEditor = <K extends TCvListKey>({
   ...props
 }: TCvListEditorProps<K>) => {
   const { control } = useFormContext<TCvData>();
-  const { fields, append, remove, move } = useFieldArray({
+  const { fields, append, insert, remove, move } = useFieldArray({
     control,
     name: listKey as TCvListKey,
     // Entries have their own `id`; don't let the field array overwrite it.
@@ -55,91 +43,96 @@ export const CvListEditor = <K extends TCvListKey>({
   // `fields` only changes on add/remove/move; the live values come from here.
   const items = (useWatch({ control, name: listKey as TCvListKey }) ??
     []) as TCvListItem<K>[];
-  // Only the entry that was just added opens by default.
-  const [addedId, setAddedId] = useState<string>();
+  // The entry whose fields are showing; a new or duplicated one opens.
+  const [openId, setOpenId] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   const onAdd = () => {
     const item = createCvItem(listKey);
     append(item as never);
-    setAddedId(item.id);
+    setOpenId(item.id);
   };
 
-  const addButton = (
-    <Button variant="solid" color="primary" fullWidth onClick={onAdd}>
-      {addLabel}
-    </Button>
-  );
+  const onDuplicate = (item: TCvListItem<K>, index: number) => {
+    const copy = { ...item, id: createCvItem(listKey).id };
+    insert(index + 1, copy as never);
+    setOpenId(copy.id);
+  };
 
-  if (fields.length === 0) {
-    return (
-      <Empty variant="surface" {...props}>
-        <EmptyHeader>
-          <EmptyTitle>{emptyTitle}</EmptyTitle>
-          <EmptyDescription>{emptyDescription}</EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>{addButton}</EmptyContent>
-      </Empty>
-    );
-  }
+  const onRemove = async (summary: string, index: number) => {
+    try {
+      await confirm({
+        title: `Remove "${summary}"?`,
+        description: "It will be removed from this CV.",
+        confirmLabel: "Remove",
+        color: "error",
+      });
+    } catch {
+      return; // Cancelled.
+    }
+    remove(index);
+  };
 
   return (
-    <Flex direction="column" gap={2.5} {...props}>
-      <SCvListEditorDragGroup
-        lockAxis="y"
-        color="primary"
-        dragHandleSelector={`.${CV_LIST_EDITOR_HANDLE_CLASS}`}
-        onDrop={({ removedIndex, addedIndex }) => {
-          if (removedIndex !== null && addedIndex !== null) {
-            move(removedIndex, addedIndex);
-          }
-        }}
-      >
-        {fields.map((field, index) => {
-          const item = items[index] ?? (field as unknown as TCvListItem<K>);
-          const summary = getSummary(item).trim() || newItemLabel;
-          const name = (key: string) =>
-            `${listKey}.${index}.${key}` as TCvFieldName;
-          return (
-            <SCvListEditorItem key={field.key}>
-              <Accordion
-                summary={
-                  <SCvListEditorSummary>
-                    <SCvListEditorHandle
-                      className={CV_LIST_EDITOR_HANDLE_CLASS}
-                      title="Drag to reorder"
-                      aria-hidden
-                      // Grabbing the handle shouldn't open or close the entry.
-                      onClick={(event) => event.stopPropagation()}
-                    />
-                    {summary}
-                  </SCvListEditorSummary>
-                }
-                defaultExpanded={item.id === addedId}
-                color="primary"
-                variant="subtle"
-                colorScope="summary"
-                radius="xs"
-              >
-                <SCvListEditorFields columns={2} gap={2}>
-                  {renderFields(item, name)}
-                </SCvListEditorFields>
-                <SCvListEditorActions justify="flex-end">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    color="error"
-                    onClick={() => remove(index)}
-                  >
-                    Remove
-                  </Button>
-                </SCvListEditorActions>
-              </Accordion>
-            </SCvListEditorItem>
-          );
-        })}
-      </SCvListEditorDragGroup>
-      {addButton}
-    </Flex>
+    <AccordionGroup
+      variant="outline"
+      color="default"
+      colorScope="none"
+      value={openId}
+      onValueChange={(_, value) => setOpenId(value)}
+      onReorder={move}
+      onAdd={onAdd}
+      addLabel={addLabel}
+      empty={
+        <SCvListEditorEmpty>
+          <strong>{emptyTitle}</strong>
+          {emptyDescription}
+        </SCvListEditorEmpty>
+      }
+      {...props}
+    >
+      {fields.map((field, index) => {
+        const item = items[index] ?? (field as unknown as TCvListItem<K>);
+        const summary = getSummary(item).trim() || newItemLabel;
+        const name = (key: string) =>
+          `${listKey}.${index}.${key}` as TCvFieldName;
+        return (
+          <Accordion
+            key={field.key}
+            value={item.id}
+            summary={summary}
+            actionsVisibility="hover"
+            actions={
+              <>
+                <IconButton
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`Duplicate ${summary}`}
+                  title="Duplicate"
+                  onClick={() => onDuplicate(item, index)}
+                >
+                  <DuplicateIcon />
+                </IconButton>
+                <IconButton
+                  size="sm"
+                  variant="ghost"
+                  color="error"
+                  aria-label={`Remove ${summary}`}
+                  title="Remove"
+                  onClick={() => onRemove(summary, index)}
+                >
+                  <TrashIcon />
+                </IconButton>
+              </>
+            }
+          >
+            <SCvListEditorFields columns={2} gap={2}>
+              {renderFields(item, name)}
+            </SCvListEditorFields>
+          </Accordion>
+        );
+      })}
+    </AccordionGroup>
   );
 };
 

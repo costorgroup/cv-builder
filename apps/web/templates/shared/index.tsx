@@ -18,6 +18,14 @@ export type TTemplateItem = {
   description: string;
 };
 
+/** Something listed by name only, like an interest. */
+export type TTemplateNamedItem = {
+  id: string;
+  name: string;
+  /** Shown as a tooltip where there is one (e.g. a skill's level). */
+  levelLabel?: string;
+};
+
 /** Skill or language with its level. */
 export type TTemplateLevelItem = {
   id: string;
@@ -69,6 +77,23 @@ export const formatDateRange = (
   return start || end;
 };
 
+/** "New York City, New York 10001, United States"; empty parts left out. */
+const formatLocation = (
+  city: string,
+  state: string,
+  zip: string,
+  country: string,
+) => {
+  const region = [state, zip]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" ");
+  return [city, region, country]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(", ");
+};
+
 const joinParts = (...parts: string[]) =>
   parts
     .map((part) => part.trim())
@@ -86,9 +111,20 @@ export const useTemplateContent = () => {
     languages,
     projects,
     certificates,
+    interests,
   } = useCvData();
-  const { firstName, lastName, aboutMe, photo, email, phone, address } =
-    personalInformation;
+  const {
+    firstName,
+    lastName,
+    aboutMe,
+    photo,
+    email,
+    phone,
+    country,
+    state,
+    city,
+    zip,
+  } = personalInformation;
 
   const fullName = [firstName, lastName].filter(Boolean).join(" ");
   const initials = [firstName, lastName]
@@ -99,7 +135,7 @@ export const useTemplateContent = () => {
   const contact: TTemplateEntry[] = [
     { label: "Email", value: email },
     { label: "Phone", value: phone },
-    { label: "Address", value: address },
+    { label: "Location", value: formatLocation(city, state, zip, country) },
   ].filter(({ value }) => value);
 
   const socials: TTemplateEntry[] = (
@@ -159,6 +195,10 @@ export const useTemplateContent = () => {
     .filter((item) => item.name.trim())
     .map((item) => ({ ...item, levelLabel: languageLevelLabel(item.level) }));
 
+  const interestItems: TTemplateNamedItem[] = interests.filter((item) =>
+    item.name.trim(),
+  );
+
   return {
     firstName,
     lastName,
@@ -174,6 +214,7 @@ export const useTemplateContent = () => {
     certificates: certificateItems,
     skills: skillItems,
     languages: languageItems,
+    interests: interestItems,
   };
 };
 

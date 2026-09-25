@@ -18,7 +18,10 @@ export const cvPlaceholderData: {
       "Motivated professional with a passion for solving problems and building great products. Quick learner, strong communicator and reliable team player.",
     email: "john.doe@email.com",
     phone: "+1 (555) 123-4567",
-    address: "123 Main Street, New York, NY 10001",
+    country: "United States",
+    state: "New York",
+    city: "New York City",
+    zip: "10001",
   },
 };
 
@@ -90,6 +93,11 @@ export const cvPlaceholderLists: { [K in TCvListKey]: TCvData[K] } = {
       date: "2020-05",
       url: "",
     },
+  ],
+  interests: [
+    { id: "placeholder-interest-1", name: "Photography" },
+    { id: "placeholder-interest-2", name: "Hiking" },
+    { id: "placeholder-interest-3", name: "Chess" },
   ],
 };
 

@@ -19,6 +19,7 @@ import type {
 } from "@/templates/timeline-template/types";
 import {
   TemplateEntries,
+  TemplateInlineList,
   TemplateLevels,
   TemplatePhotoContent,
   useTemplateContent,
@@ -45,6 +46,7 @@ const TimelineTemplateCv = ({
     certificates,
     skills,
     languages,
+    interests,
   } = useTemplateContent();
 
   // Every section is a stop on the timeline.
@@ -136,6 +138,11 @@ const TimelineTemplateCv = ({
               color={colors.accent}
               trackColor={colors.line}
             />,
+          )}
+          {renderItem(
+            "Interests",
+            interests.length > 0,
+            <TemplateInlineList items={interests} separator=" · " />,
           )}
           {renderList("Contact", contact)}
           {renderList("Social Media", socials)}

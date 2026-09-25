@@ -45,6 +45,7 @@ const ElegantTemplateCv = ({
     certificates,
     skills,
     languages,
+    interests,
   } = useTemplateContent();
 
   const renderSection = (title: string, show: boolean, children: ReactNode) =>
@@ -118,6 +119,11 @@ const ElegantTemplateCv = ({
               color={colors.accent}
               trackColor={mutedColor(colors.frame, 45)}
             />,
+          )}
+          {renderSection(
+            "Interests",
+            interests.length > 0,
+            <TemplateInlineList items={interests} separator="  ✦  " />,
           )}
           {renderSection(
             "Certificates",

@@ -21,6 +21,7 @@ import type {
 import {
   mutedColor,
   TemplateEntries,
+  TemplateInlineList,
   TemplateLevels,
   TemplatePhotoContent,
   useTemplateContent,
@@ -47,6 +48,7 @@ const ExecutiveTemplateCv = ({
     certificates,
     skills,
     languages,
+    interests,
   } = useTemplateContent();
 
   const renderSection = (title: string, show: boolean, children: ReactNode) =>
@@ -115,6 +117,11 @@ const ExecutiveTemplateCv = ({
               color={colors.accent}
               trackColor={mutedColor(colors.text, 20)}
             />,
+          )}
+          {renderSection(
+            "Interests",
+            interests.length > 0,
+            <TemplateInlineList items={interests} separator=" · " />,
           )}
           {renderList("Social Media", socials)}
         </SExecutiveTemplateAside>

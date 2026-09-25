@@ -41,6 +41,7 @@ const ClassicTemplateCv = ({
     certificates,
     skills,
     languages,
+    interests,
   } = useTemplateContent();
 
   const renderSection = (title: string, show: boolean, children: ReactNode) =>
@@ -111,6 +112,11 @@ const ClassicTemplateCv = ({
             color={colors.accent}
             trackColor={colors.accent}
           />,
+        )}
+        {renderSection(
+          "Interests",
+          interests.length > 0,
+          <TemplateInlineList items={interests} separator=" · " />,
         )}
         {renderSection(
           "Social Media",

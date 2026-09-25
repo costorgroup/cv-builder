@@ -47,6 +47,7 @@ const ColumnsTemplateCv = ({
     certificates,
     skills,
     languages,
+    interests,
   } = useTemplateContent();
 
   const renderSection = (title: string, show: boolean, children: ReactNode) =>
@@ -143,6 +144,15 @@ const ColumnsTemplateCv = ({
               variant="bar"
               color={colors.accent}
               trackColor={mutedColor(colors.accent, 20)}
+            />,
+          )}
+          {renderSection(
+            "Interests",
+            interests.length > 0,
+            <TemplateChips
+              items={interests}
+              background={mutedColor(colors.accent, 25)}
+              color={colors.text}
             />,
           )}
           {renderList("Links", socials)}

@@ -42,6 +42,7 @@ const TechTemplateCv = ({ colors, sizes, typography }: TTechTemplateProps) => {
     certificates,
     skills,
     languages,
+    interests,
   } = useTemplateContent();
 
   const renderSection = (title: string, show: boolean, children: ReactNode) =>
@@ -97,6 +98,15 @@ const TechTemplateCv = ({ colors, sizes, typography }: TTechTemplateProps) => {
             variant="bar"
             color={colors.accent}
             trackColor={mutedColor(colors.muted, 30)}
+          />,
+        )}
+        {renderSection(
+          "interests",
+          interests.length > 0,
+          <TemplateChips
+            items={interests}
+            background={mutedColor(colors.accent, 20)}
+            color={colors.accent}
           />,
         )}
         {renderList("links", socials)}

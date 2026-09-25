@@ -8,7 +8,7 @@ import {
   CvPlaceholdersContext,
 } from "@/providers/cv-provider/context";
 import { getCvCompletion } from "@/providers/cv-provider/completion";
-import { emptyCvData } from "@/providers/cv-provider/items";
+import { emptyCvData, withCvDefaults } from "@/providers/cv-provider/items";
 import { templates } from "@/templates";
 import type {
   TTemplate,
@@ -30,9 +30,10 @@ export const CvProvider = ({
   children,
   initialData = emptyCvData,
   initialAppearance,
+  initialFileName = "",
 }: TCvProviderProps) => {
   const form = useForm<TCvData>({
-    defaultValues: initialData,
+    defaultValues: withCvDefaults(initialData),
     mode: "onTouched",
   });
   // Whole-form watch: the preview and the completion follow every keystroke.
@@ -52,7 +53,7 @@ export const CvProvider = ({
   const [fontScale, setFontScale] = useState<number>(
     initialAppearance?.fontScale ?? 1,
   );
-  const [fileName, setFileName] = useState("");
+  const [fileName, setFileName] = useState(initialFileName);
   const { firstName, lastName } = data.personalInformation;
   const resolvedFileName =
     fileName.trim() ||
@@ -182,6 +183,7 @@ export {
   createCvItem,
   emptyCvData,
   languageLevelLabel,
+  withCvDefaults,
   skillLevelLabel,
 } from "@/providers/cv-provider/items";
 export type * from "@/providers/cv-provider/types";

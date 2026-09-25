@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Button,
+  CheckBox,
   Modal,
   Pagination,
   Small,
-  Switch,
   TextField,
 } from "@costor/ui";
 import CvDisplay from "@/components/cv-display";
@@ -21,12 +21,20 @@ import {
 import type {
   TCvExportDownloadState,
   TCvExportModalProps,
+  TCvExportSaveState,
 } from "@/components/cv-export-modal/types";
 import { useCv } from "@/providers/cv-provider/context";
+import type { TCvDocument } from "@/providers/cv-provider/types";
+import { ApiError } from "@/utils/api-client";
+import { cvsApi } from "@/utils/cvs-api";
 import { downloadCvPdf } from "@/utils/download-cv-pdf";
 
-/** Last look at the finished CV: page-by-page preview, file name and PDF. */
-export const CvExportModal = ({ open, onClose }: TCvExportModalProps) => {
+/**
+ * Last look at the finished CV: page-by-page preview, file name and PDF.
+ * "Save & Finish" saves it to the account (and downloads the PDF, unless
+ * unticked), then goes back to the dashboard.
+ */
+export const CvExportModal = ({ open, onClose, cvId }: TCvExportModalProps) => {
   const router = useRouter();
   const {
     data,
@@ -43,30 +51,74 @@ export const CvExportModal = ({ open, onClose }: TCvExportModalProps) => {
   const [pageCount, setPageCount] = useState(1);
   const [downloadState, setDownloadState] =
     useState<TCvExportDownloadState>("idle");
+  const [saveState, setSaveState] = useState<TCvExportSaveState>({
+    status: "idle",
+  });
+  const [downloadOnSave, setDownloadOnSave] = useState(true);
+  // Once saved, a retry (e.g. after the PDF failed) updates this CV instead
+  // of creating another.
+  const [savedCvId, setSavedCvId] = useState(cvId);
+  const busy = saveState.status === "saving" || saveState.status === "downloading";
   // The CV may have fewer pages than the one last viewed.
   const currentPage = Math.min(page, pageCount);
+
+  const cvDocument: TCvDocument = {
+    data,
+    appearance: {
+      templateId: template.id,
+      colorSchemeId,
+      sizes,
+      fontId,
+      fontScale,
+    },
+  };
 
   const onDownload = async () => {
     setDownloadState("loading");
     try {
-      await downloadCvPdf(
-        {
-          data,
-          appearance: {
-            templateId: template.id,
-            colorSchemeId,
-            sizes,
-            fontId,
-            fontScale,
-          },
-        },
-        resolvedFileName,
-      );
+      await downloadCvPdf(cvDocument, resolvedFileName);
       setDownloadState("idle");
     } catch (error) {
       console.error(error);
       setDownloadState("error");
     }
+  };
+
+  const onSave = async () => {
+    setSaveState({ status: "saving" });
+    const body = { name: resolvedFileName, ...cvDocument };
+    try {
+      const saved = await (savedCvId
+        ? cvsApi.update(savedCvId, body)
+        : cvsApi.create(body));
+      setSavedCvId(saved.id);
+    } catch (error) {
+      setSaveState({
+        status: "error",
+        message: `Couldn't save your CV: ${
+          error instanceof ApiError
+            ? error.message
+            : "couldn't reach the server."
+        }`,
+      });
+      return;
+    }
+
+    if (downloadOnSave) {
+      setSaveState({ status: "downloading" });
+      try {
+        await downloadCvPdf(cvDocument, resolvedFileName);
+      } catch (error) {
+        console.error(error);
+        setSaveState({
+          status: "error",
+          message:
+            "Your CV was saved, but the PDF couldn't be created. Try again, or untick the download.",
+        });
+        return;
+      }
+    }
+    router.push("/dashboard");
   };
 
   return (
@@ -82,9 +134,14 @@ export const CvExportModal = ({ open, onClose }: TCvExportModalProps) => {
           <Button
             variant="solid"
             color="primary"
-            onClick={() => router.push("/")}
+            disabled={busy}
+            onClick={onSave}
           >
-            Save &amp; Finish
+            {saveState.status === "saving"
+              ? "Saving…"
+              : saveState.status === "downloading"
+                ? "Preparing PDF…"
+                : "Save & Finish"}
           </Button>
         </>
       }
@@ -120,7 +177,12 @@ export const CvExportModal = ({ open, onClose }: TCvExportModalProps) => {
             onChange={(event) => setFileName(event.target.value)}
             helperText={`Saved as "${resolvedFileName}.pdf"`}
           />
-          <Switch label="Include fonts" size="sm" defaultChecked />
+          <CheckBox
+            label="Download PDF when saving"
+            size="sm"
+            checked={downloadOnSave}
+            onChange={(event) => setDownloadOnSave(event.target.checked)}
+          />
           <Button
             variant="subtle"
             color="primary"
@@ -132,6 +194,9 @@ export const CvExportModal = ({ open, onClose }: TCvExportModalProps) => {
           </Button>
           {downloadState === "error" && (
             <Small>Couldn&apos;t create the PDF. Try again.</Small>
+          )}
+          {saveState.status === "error" && (
+            <Small color="error">{saveState.message}</Small>
           )}
         </SCvExportModalSettings>
       </SCvExportModalBody>

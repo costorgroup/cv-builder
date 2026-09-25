@@ -4,6 +4,7 @@ import type { TPersonalInformationPageProps } from "@/views/personal-information
 import { useMemo } from "react";
 import { Flex, GridCell } from "@costor/ui";
 import { CvTextArea, CvTextField } from "@/components/cv-form-fields";
+import CvLocationFields from "@/components/cv-location-fields";
 import {
   SPersonalInformationPageDropzone,
   SPersonalInformationPageGrid,
@@ -93,15 +94,7 @@ const PersonalInformationPage = ({
             required
           />
         </GridCell>
-        <GridCell colSpan={2}>
-          <CvTextField
-            name="personalInformation.address"
-            label="Address"
-            variant="subtle"
-            size="sm"
-            required
-          />
-        </GridCell>
+        <CvLocationFields />
         <GridCell colSpan={2}>
           <CvTextArea
             name="personalInformation.aboutMe"

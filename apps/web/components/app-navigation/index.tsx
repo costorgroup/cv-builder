@@ -9,7 +9,7 @@ import type { TAppNavigationLink, TAppNavigationProps } from "./types";
 
 const LINKS: TAppNavigationLink[] = [
   { href: "/", label: "Home" },
-  { href: "/manage-cv", label: "Manage CV" },
+  { href: "/dashboard", label: "My CVs" },
 ];
 
 export const AppNavigation = (props: TAppNavigationProps) => {

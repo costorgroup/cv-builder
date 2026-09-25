@@ -42,6 +42,7 @@ const MinimalTemplateCv = ({
     certificates,
     skills,
     languages,
+    interests,
   } = useTemplateContent();
 
   // One grid row: the label on the left, the content on the right.
@@ -116,6 +117,11 @@ const MinimalTemplateCv = ({
             color={colors.accent}
             trackColor={mutedColor(colors.muted, 35)}
           />,
+        )}
+        {renderRow(
+          "Interests",
+          interests.length > 0,
+          <TemplateInlineList items={interests} separator=" / " />,
         )}
         {renderList("Contact", contact)}
         {renderList("Social", socials)}

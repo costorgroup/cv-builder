@@ -19,6 +19,7 @@ import type {
 import {
   mutedColor,
   TemplateEntries,
+  TemplateInlineList,
   TemplateLevels,
   TemplatePhotoContent,
   useTemplateContent,
@@ -45,6 +46,7 @@ const DefaultTemplateCv = ({
     certificates,
     skills,
     languages,
+    interests,
   } = useTemplateContent();
 
   const renderSection = (title: string, show: boolean, children: ReactNode) =>
@@ -106,6 +108,11 @@ const DefaultTemplateCv = ({
             color={colors.accent}
             trackColor={mutedColor(colors.sidebarText, 25)}
           />,
+        )}
+        {renderSection(
+          "Interests",
+          interests.length > 0,
+          <TemplateInlineList items={interests} separator=", " />,
         )}
       </SDefaultTemplateSidebar>
       <SDefaultTemplateMain

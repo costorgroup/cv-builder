@@ -20,7 +20,7 @@ export const useCv = (): TCvContextValue => {
 };
 
 /**
- * All CV data for rendering: what was filled in through the manage-cv forms,
+ * All CV data for rendering: what was filled in through the CV editor forms,
  * plus sample data for empty fields inside `<CvPlaceholders>`. Forms should
  * read the raw values from `useCv().data` instead.
  */

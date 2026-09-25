@@ -48,6 +48,7 @@ const ModernTemplateCv = ({
     certificates,
     skills,
     languages,
+    interests,
   } = useTemplateContent();
 
   const renderSection = (title: string, show: boolean, children: ReactNode) =>
@@ -135,6 +136,15 @@ const ModernTemplateCv = ({
             variant="stars"
             color={colors.accent}
             trackColor={mutedColor(colors.sidebarText, 30)}
+          />,
+        )}
+        {renderSection(
+          "Interests",
+          interests.length > 0,
+          <TemplateChips
+            items={interests}
+            background={colors.accent}
+            color={colors.sidebar}
           />,
         )}
         {renderSection(

@@ -9,6 +9,7 @@ import {
 } from "@costor/ui";
 import { useController, useFormContext } from "react-hook-form";
 import type { TCvData } from "@/providers/cv-provider/types";
+import { NO_AUTOFILL } from "@/utils/no-autofill";
 import {
   formatCvDate,
   parseCvDate,
@@ -55,6 +56,7 @@ export const CvTextField = ({
   const { field, errorProps } = useCvField(name, label, required);
   return (
     <TextField
+      autoComplete={NO_AUTOFILL}
       {...props}
       {...errorProps}
       label={label}
@@ -76,6 +78,7 @@ export const CvTextArea = ({
   const { field, errorProps } = useCvField(name, label, required);
   return (
     <TextArea
+      autoComplete={NO_AUTOFILL}
       {...props}
       {...errorProps}
       label={label}

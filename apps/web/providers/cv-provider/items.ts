@@ -72,6 +72,7 @@ const emptyItems: { [K in TCvListKey]: () => Omit<TCvListItem<K>, "id"> } = {
     description: "",
   }),
   certificates: () => ({ name: "", issuer: "", date: "", url: "" }),
+  interests: () => ({ name: "" }),
 };
 
 export const createCvItem = <K extends TCvListKey>(key: K): TCvListItem<K> =>
@@ -85,7 +86,10 @@ export const emptyCvData: TCvData = {
     photo: "",
     email: "",
     phone: "",
-    address: "",
+    country: "",
+    state: "",
+    city: "",
+    zip: "",
   },
   socialMedia: {
     facebook: "",
@@ -102,4 +106,29 @@ export const emptyCvData: TCvData = {
   languages: [],
   projects: [],
   certificates: [],
+  interests: [],
 };
+
+/** Only the fields `empty` has, taking values from `values` where set. */
+const pickFields = <T extends object>(empty: T, values: Partial<T> = {}): T =>
+  Object.fromEntries(
+    Object.entries(empty).map(([key, fallback]) => [
+      key,
+      (values as Record<string, unknown>)[key] ?? fallback,
+    ]),
+  ) as T;
+
+/**
+ * Saved CV data in the current shape, so older CVs still open and render: a
+ * section or field added since is filled in empty, and one that was removed
+ * (e.g. `address`) is dropped.
+ */
+export const withCvDefaults = (data: Partial<TCvData>): TCvData => ({
+  ...emptyCvData,
+  ...data,
+  personalInformation: pickFields(
+    emptyCvData.personalInformation,
+    data.personalInformation,
+  ),
+  socialMedia: pickFields(emptyCvData.socialMedia, data.socialMedia),
+});

@@ -43,6 +43,7 @@ const BoldTemplateCv = ({ colors, sizes, typography }: TBoldTemplateProps) => {
     certificates,
     skills,
     languages,
+    interests,
   } = useTemplateContent();
 
   // Wide sections span both body columns.
@@ -134,6 +135,15 @@ const BoldTemplateCv = ({ colors, sizes, typography }: TBoldTemplateProps) => {
             variant="dots"
             color={colors.text}
             trackColor={mutedColor(colors.text, 18)}
+          />,
+        )}
+        {renderSection(
+          "Interests",
+          interests.length > 0,
+          <TemplateChips
+            items={interests}
+            background={colors.hero}
+            color={colors.heroText}
           />,
         )}
         {renderSection(

@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String      @id @default(uuid())
+  email           String      @unique
+  firstName       String
+  lastName        String
+  passwordHash    String
+  emailVerifiedAt DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  sessions        Session[]
+  authTokens      AuthToken[]
+  cvs             Cv[]
+}
+
+/// A saved CV: the same `data` + `appearance` document the editor works on.
+model Cv {
+  id         String   @id @default(uuid())
+  userId     String
+  name       String
+  data       Json
+  appearance Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+}
+
+/// One signed-in device. Holds the hash of its refresh token, so signing out
+/// (or resetting the password) revokes it.
+model Session {
+  id               String   @id @default(uuid())
+  userId           String
+  refreshTokenHash String   @unique
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum AuthTokenType {
+  VERIFY_ACCOUNT
+  RESET_PASSWORD
+}
+
+/// Single-use link tokens sent by email. Only the hash is stored.
+model AuthToken {
+  id        String        @id @default(uuid())
+  userId    String
+  type      AuthTokenType
+  tokenHash String        @unique
+  expiresAt DateTime
+  createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+/// Location reference data from GeoNames (https://www.geonames.org, CC BY 4.0),
+/// loaded by `pnpm db:seed`. CVs store the picked names, not these ids.
+model Country {
+  /// ISO 3166-1 alpha-2, e.g. "RS".
+  code   String  @id
+  name   String
+  states State[]
+  cities City[]
+}
+
+/// First-level division of a country: a state, province, region…
+model State {
+  /// GeoNames id.
+  id          Int     @id
+  countryCode String
+  /// GeoNames admin1 code, unique within the country.
+  code        String
+  name        String
+  country     Country @relation(fields: [countryCode], references: [code], onDelete: Cascade)
+  cities      City[]
+
+  @@unique([countryCode, code])
+}
+
+/// Cities and towns with at least 1,000 people.
+model City {
+  /// GeoNames id.
+  id          Int     @id
+  countryCode String
+  stateId     Int?
+  name        String
+  /// Name without accents, for search ("Nis" finds "Niš").
+  asciiName   String
+  population  Int
+  country     Country @relation(fields: [countryCode], references: [code], onDelete: Cascade)
+  state       State?  @relation(fields: [stateId], references: [id], onDelete: SetNull)
+
+  @@index([countryCode, population])
+  @@index([stateId])
+}

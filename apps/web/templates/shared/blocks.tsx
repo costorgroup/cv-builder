@@ -4,6 +4,7 @@ import { CV_LEVEL_MAX } from "@/providers/cv-provider/items";
 import type {
   TTemplateItem,
   TTemplateLevelItem,
+  TTemplateNamedItem,
 } from "@/templates/shared/index";
 
 // Unstyled building blocks shared by templates. Layout comes from
@@ -141,14 +142,14 @@ export const TemplateLevels = ({
   </ul>
 );
 
-/** Skills as chips. `outline` draws a border instead of a fill. */
+/** Skills or interests as chips. `outline` draws a border instead of a fill. */
 export const TemplateChips = ({
   items,
   background,
   color,
   outline = false,
 }: {
-  items: TTemplateLevelItem[];
+  items: TTemplateNamedItem[];
   background: string;
   color: string;
   outline?: boolean;
@@ -175,7 +176,7 @@ export const TemplateInlineList = ({
   items,
   separator = ", ",
 }: {
-  items: TTemplateLevelItem[];
+  items: TTemplateNamedItem[];
   separator?: string;
 }) => (
   <p className="cv-inline-list">

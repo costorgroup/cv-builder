@@ -22,6 +22,7 @@ import {
   mutedColor,
   TemplateChips,
   TemplateEntries,
+  TemplateInlineList,
   TemplateLevels,
   TemplatePhotoContent,
   useTemplateContent,
@@ -49,6 +50,7 @@ const CreativeTemplateCv = ({
     certificates,
     skills,
     languages,
+    interests,
   } = useTemplateContent();
 
   const renderSection = (title: string, show: boolean, children: ReactNode) =>
@@ -110,6 +112,11 @@ const CreativeTemplateCv = ({
             color={colors.accent}
             trackColor={mutedColor(colors.stripText, 30)}
           />,
+        )}
+        {renderStripSection(
+          "Interests",
+          interests.length > 0,
+          <TemplateInlineList items={interests} separator=", " />,
         )}
       </SCreativeTemplateStrip>
       <SCreativeTemplateMain
