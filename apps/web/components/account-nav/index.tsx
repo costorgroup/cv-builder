@@ -19,6 +19,7 @@ import ButtonLink from "@/components/button-link";
 import { SignOutIcon } from "@/components/account-nav/icons";
 import {
   SAccountNav,
+  SAccountNavSignIn,
   SAccountNavTrigger,
   SAccountNavUser,
 } from "@/components/account-nav/styles";
@@ -57,9 +58,9 @@ export const AccountNav = () => {
   if (auth.status === "signed-out") {
     return (
       <SAccountNav align="center" gap={2}>
-        <Button as={ButtonLink} href="/auth/sign-in" variant="ghost">
+        <SAccountNavSignIn as={ButtonLink} href="/auth/sign-in" variant="ghost">
           Sign in
-        </Button>
+        </SAccountNavSignIn>
         <Button as={ButtonLink} href="/auth/sign-up" variant="solid" color="primary">
           Create account
         </Button>

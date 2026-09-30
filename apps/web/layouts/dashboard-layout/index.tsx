@@ -1,23 +1,14 @@
 "use client";
 
-import Image from "next/image";
-import NextLink from "next/link";
 import { Suspense, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Heading, Small } from "@costor/ui";
-import AccountNav from "@/components/account-nav";
 import CreateCvMenu from "@/components/create-cv-menu";
 import CvSearch from "@/components/cv-search";
-import { ThemeToggle } from "@/components/theme-toggle";
+import TopNav from "@/components/top-nav";
 import {
   SDashboardLayout,
-  SDashboardLayoutActions,
-  SDashboardLayoutBrand,
   SDashboardLayoutContent,
-  SDashboardLayoutHeader,
-  SDashboardLayoutNav,
   SDashboardLayoutSearch,
-  SDashboardLayoutTools,
 } from "@/layouts/dashboard-layout/styles";
 import type {
   TDashboardLayoutPage,
@@ -63,31 +54,16 @@ const DashboardLayout = ({ children }: TDashboardLayoutProps) => {
     <AuthProvider>
       <RequireSignIn />
       <SDashboardLayout>
-        <SDashboardLayoutNav radius="lg">
-          <SDashboardLayoutBrand>
-            <NextLink href="/dashboard" aria-label="CV Builder home">
-              <Image src="/logo.png" alt="" width={40} height={40} priority />
-            </NextLink>
-          </SDashboardLayoutBrand>
-          <SDashboardLayoutHeader>
-            <Heading as="h6">{title}</Heading>
-            <Small color="secondary">{description}</Small>
-          </SDashboardLayoutHeader>
-          <SDashboardLayoutTools>
-            {searchable && (
-              <SDashboardLayoutSearch>
-                <Suspense>
-                  <CvSearch />
-                </Suspense>
-              </SDashboardLayoutSearch>
-            )}
-            <CreateCvMenu />
-          </SDashboardLayoutTools>
-          <SDashboardLayoutActions>
-            <ThemeToggle />
-            <AccountNav />
-          </SDashboardLayoutActions>
-        </SDashboardLayoutNav>
+        <TopNav homeHref="/dashboard" title={title} description={description}>
+          {searchable && (
+            <SDashboardLayoutSearch>
+              <Suspense>
+                <CvSearch />
+              </Suspense>
+            </SDashboardLayoutSearch>
+          )}
+          <CreateCvMenu />
+        </TopNav>
         <SDashboardLayoutContent>{children}</SDashboardLayoutContent>
       </SDashboardLayout>
     </AuthProvider>

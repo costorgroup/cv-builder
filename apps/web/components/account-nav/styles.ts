@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { Flex } from "@costor/ui";
+import { Button, Flex } from "@costor/ui";
 
 export const SAccountNav = styled(Flex)`
   height: 100%;
@@ -42,9 +42,21 @@ export const SAccountNavUser = styled(Flex)`
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  /* Just the avatar on narrow screens. */
+  ${({ theme }) => theme.breakpoints.down("sm")} {
+    display: none;
+  }
 `;
 
 export const SAccountNavIcon = styled.svg`
   width: 1.25em;
   height: 1.25em;
+`;
+
+/** Hidden on narrow screens, where the site menu offers sign-in instead. */
+export const SAccountNavSignIn = styled(Button)`
+  ${({ theme }) => theme.breakpoints.down("sm")} {
+    display: none;
+  }
 `;

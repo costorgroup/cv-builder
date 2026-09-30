@@ -19,3 +19,8 @@ export { default as ChangePasswordPage } from "@/views/change-password-page";
 export { default as DashboardPage } from "@/views/dashboard-page";
 export { default as CvEditorStepPage } from "@/views/cv-editor-step-page";
 export { default as InterestsPage } from "@/views/interests-page";
+export { default as PricingPage } from "@/views/pricing-page";
+export { default as TermsOfUsePage } from "@/views/terms-of-use-page";
+export { default as PrivacyPolicyPage } from "@/views/privacy-policy-page";
+export { default as CookiePolicyPage } from "@/views/cookie-policy-page";
+export { default as ThirdPartyToolsPage } from "@/views/third-party-tools-page";
