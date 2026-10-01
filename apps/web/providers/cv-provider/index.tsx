@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
+import { normalizeCvAppearance, type TCvAppearance } from "@repo/cv-core";
 import { findCvFont } from "@/fonts";
 import {
   CvContext,
@@ -30,6 +31,7 @@ export const CvProvider = ({
   children,
   initialData = emptyCvData,
   initialAppearance,
+  savedAppearance: savedAppearanceInput,
   initialFileName = "",
 }: TCvProviderProps) => {
   const form = useForm<TCvData>({
@@ -54,6 +56,12 @@ export const CvProvider = ({
     initialAppearance?.fontScale ?? 1,
   );
   const [fileName, setFileName] = useState(initialFileName);
+  // The CV as it was saved, with defaults filled in; null for a new CV.
+  const [savedAppearance] = useState<TCvAppearance | null>(() => {
+    if (!savedAppearanceInput) return null;
+    const result = normalizeCvAppearance(savedAppearanceInput);
+    return "appearance" in result ? result.appearance : null;
+  });
   const { firstName, lastName } = data.personalInformation;
   const resolvedFileName =
     fileName.trim() ||
@@ -108,6 +116,16 @@ export const CvProvider = ({
     [template, colorSchemeId],
   );
 
+  const resetSectionSizes = useCallback(
+    () => setSizes(getDefaultSizes(template)),
+    [template],
+  );
+
+  const appearance = useMemo<TCvAppearance>(
+    () => ({ templateId: template.id, colorSchemeId, sizes, fontId, fontScale }),
+    [template, colorSchemeId, sizes, fontId, fontScale],
+  );
+
   const typography = useMemo<TTemplateTypography>(
     () => ({ fontFamily: findCvFont(fontId).family, fontScale }),
     [fontId, fontScale],
@@ -125,11 +143,14 @@ export const CvProvider = ({
       colors,
       sizes,
       setSectionSize,
+      resetSectionSizes,
       fontId,
       setFontId,
       fontScale,
       setFontScale,
       typography,
+      appearance,
+      savedAppearance,
       fileName,
       setFileName,
       resolvedFileName,
@@ -144,9 +165,12 @@ export const CvProvider = ({
       colors,
       sizes,
       setSectionSize,
+      resetSectionSizes,
       fontId,
       fontScale,
       typography,
+      appearance,
+      savedAppearance,
       fileName,
       resolvedFileName,
     ],

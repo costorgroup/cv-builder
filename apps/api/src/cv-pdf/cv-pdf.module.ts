@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { CvPdfController } from './cv-pdf.controller.js';
 import { CvPdfService } from './cv-pdf.service.js';
 
+/** Renders CV documents as PDFs; the CV routes decide what may be rendered. */
 @Module({
-  controllers: [CvPdfController],
   providers: [CvPdfService],
+  exports: [CvPdfService],
 })
 export class CvPdfModule {}

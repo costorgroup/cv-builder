@@ -7,32 +7,211 @@ datasource db {
   provider = "postgresql"
 }
 
+/// What someone may do across the whole platform. Separate from their role
+/// in any organization.
+enum PlatformRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
 model User {
-  id              String      @id @default(uuid())
-  email           String      @unique
-  firstName       String
-  lastName        String
-  passwordHash    String
-  emailVerifiedAt DateTime?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  sessions        Session[]
-  authTokens      AuthToken[]
-  cvs             Cv[]
+  id                   String               @id @default(uuid())
+  email                String               @unique
+  firstName            String
+  lastName             String
+  passwordHash         String
+  emailVerifiedAt      DateTime?
+  role                 PlatformRole         @default(USER)
+  /// Set when an admin disables the account; it can't be used while set.
+  disabledAt           DateTime?
+  lastActiveAt         DateTime?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  sessions             Session[]
+  authTokens           AuthToken[]
+  cvs                  Cv[]
+  memberships          OrganizationMember[]
+  personalOrganization Organization?        @relation("PersonalOrganization")
 }
 
 /// A saved CV: the same `data` + `appearance` document the editor works on.
+/// Owned by exactly one of a platform user (`userId`) or an embedded
+/// builder's end user (`externalUserId`); a check constraint enforces it.
 model Cv {
-  id         String   @id @default(uuid())
-  userId     String
-  name       String
-  data       Json
-  appearance Json
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String        @id @default(uuid())
+  userId         String?
+  externalUserId String?
+  /// The tenant the CV belongs to: a user's personal organization, or the
+  /// organization whose embed the external user came through.
+  organizationId String
+  name           String
+  data           Json
+  appearance     Json
+  /// `appearance.templateId`, as a column to filter and count by.
+  templateId     String?
+  /// Size of `data` + `appearance` as JSON, for storage usage.
+  sizeBytes      Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  externalUser   ExternalUser? @relation(fields: [externalUserId], references: [id], onDelete: Cascade)
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([userId, updatedAt])
+  @@index([externalUserId, updatedAt])
+  @@index([organizationId, updatedAt])
+}
+
+enum OrganizationType {
+  /// Created with every user and never shown as an "organization": it holds
+  /// their plan, and later their API keys and embeds.
+  PERSONAL
+  TEAM
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+/// The tenant and billing owner: plans, keys, embeds and usage belong here.
+model Organization {
+  id              String               @id @default(uuid())
+  type            OrganizationType
+  name            String
+  slug            String               @unique
+  /// The user a PERSONAL organization belongs to; null for TEAM ones. Being
+  /// unique, it also allows only one personal organization per user.
+  personalOwnerId String?              @unique
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  deletedAt       DateTime?
+  personalOwner   User?                @relation("PersonalOrganization", fields: [personalOwnerId], references: [id], onDelete: Cascade)
+  members         OrganizationMember[]
+  subscription    Subscription?
+  cvs             Cv[]
+  usageCounters   UsageCounter[]
+  invites         OrganizationInvite[]
+  apiKeys         ApiKey[]
+  embedConfigs    EmbedConfig[]
+  externalUsers   ExternalUser[]
+}
+
+/// How often something metered (e.g. "pdf.generated") happened in one
+/// organization in one calendar month (UTC). Counted up in place, so there's
+/// one row per metric per month rather than one per event.
+model UsageCounter {
+  organizationId String
+  metric         String
+  /// First instant of the month, UTC.
+  periodStart    DateTime
+  count          BigInt       @default(0)
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, metric, periodStart])
+}
+
+model OrganizationMember {
+  organizationId String
+  userId         String
+  role           OrganizationRole
+  createdAt      DateTime         @default(now())
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, userId])
+  @@index([userId])
+}
+
+enum BillingPeriod {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+/// A plan in the catalog. `features` and `limits` use the keys the API's
+/// entitlement registry knows; admins change their values, not their meaning.
+model Plan {
+  id                String         @id @default(uuid())
+  /// Stable name for code and seeds, e.g. "free".
+  key               String         @unique
+  /// The payment provider's product for this plan (e.g. Paddle "pro_…").
+  providerProductId String?        @unique
+  name              String
+  description       String?
+  /// The plan anyone without another one is on. Exactly one plan has it
+  /// (a partial unique index in the migration).
+  isDefault         Boolean        @default(false)
+  /// Listed on the pricing page.
+  isPublic          Boolean        @default(true)
+  sortOrder         Int            @default(0)
+  features          String[]
+  /// Limit key → number, or null for unlimited.
+  limits            Json
+  archivedAt        DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  prices            PlanPrice[]
+  subscriptions     Subscription[]
+}
+
+/// What a plan costs per billing period, in one currency. Never changed
+/// while someone pays it: a new price gets a new row and the old one is
+/// deactivated. `providerPriceId` is set on the default-currency row; prices
+/// in other currencies are sent to the provider as country overrides of it.
+model PlanPrice {
+  id              String         @id @default(uuid())
+  planId          String
+  period          BillingPeriod
+  amountCents     Int
+  currency        String         @default("EUR")
+  providerPriceId String?        @unique
+  active          Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  plan            Plan           @relation(fields: [planId], references: [id])
+  subscriptions   Subscription[]
+
+  @@index([planId, active])
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+/// An organization's current plan, updated in place; every organization has
+/// one (free plans too, with provider "none").
+model Subscription {
+  id                     String             @id @default(uuid())
+  organizationId         String             @unique
+  planId                 String
+  priceId                String?
+  status                 SubscriptionStatus
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean            @default(false)
+  canceledAt             DateTime?
+  trialEndsAt            DateTime?
+  /// Payment provider, or "none" for plans nobody pays for.
+  provider               String             @default("none")
+  providerCustomerId     String?
+  providerSubscriptionId String?            @unique
+  /// Admin grants on top of the plan: { features?: string[], limits?: {…} }.
+  overrides              Json?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  organization           Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan                   Plan               @relation(fields: [planId], references: [id])
+  price                  PlanPrice?         @relation(fields: [priceId], references: [id])
+
+  @@index([planId])
+  @@index([status, currentPeriodEnd])
 }
 
 /// One signed-in device. Holds the hash of its refresh token, so signing out
@@ -42,6 +221,12 @@ model Session {
   userId           String
   refreshTokenHash String   @unique
   expiresAt        DateTime
+  /// The browser's User-Agent, to show which device this is.
+  userAgent        String?
+  /// Where the session was last refreshed from.
+  ipAddress        String?
+  /// Updated when the session is refreshed (about every 15 minutes in use).
+  lastUsedAt       DateTime @default(now())
   createdAt        DateTime @default(now())
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -70,10 +255,12 @@ model AuthToken {
 /// loaded by `pnpm db:seed`. CVs store the picked names, not these ids.
 model Country {
   /// ISO 3166-1 alpha-2, e.g. "RS".
-  code   String  @id
-  name   String
-  states State[]
-  cities City[]
+  code     String  @id
+  name     String
+  /// ISO 4217 code of the local currency, e.g. "RSD"; which prices to show.
+  currency String?
+  states   State[]
+  cities   City[]
 }
 
 /// First-level division of a country: a state, province, region…
@@ -105,4 +292,179 @@ model City {
 
   @@index([countryCode, population])
   @@index([stateId])
+}
+
+/// A payment provider's webhook, recorded so a repeated delivery is only
+/// acted on once.
+model WebhookEvent {
+  id              String    @id @default(uuid())
+  provider        String
+  providerEventId String
+  type            String
+  receivedAt      DateTime  @default(now())
+  processedAt     DateTime?
+  /// Why processing failed, if it did; the provider retries.
+  error           String?
+
+  @@unique([provider, providerEventId])
+}
+
+/// Who did something recorded in the audit log.
+enum AuditActorType {
+  USER
+  API_KEY
+  EXTERNAL_USER
+  /// The app itself, e.g. a payment provider's webhook or a scheduled job.
+  SYSTEM
+}
+
+/// An important action, kept for accountability. No foreign keys: entries
+/// outlive the users and things they mention. Never holds secrets.
+model AuditLog {
+  id             String         @id @default(uuid())
+  actorType      AuditActorType
+  actorId        String?
+  organizationId String?
+  /// What happened, e.g. "CV_DELETED".
+  action         String
+  resourceType   String
+  resourceId     String?
+  metadata       Json           @default("{}")
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime       @default(now())
+
+  @@index([createdAt])
+  @@index([organizationId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([resourceType, resourceId])
+  @@index([action, createdAt])
+}
+
+/// Whether every plan can use a template, or only plans with
+/// `template.premium`.
+enum TemplateTier {
+  FREE
+  PREMIUM
+}
+
+enum TemplateStatus {
+  PUBLISHED
+  /// Can't be picked for a CV; CVs already on it keep it.
+  HIDDEN
+}
+
+/// How a template is offered. Its look (layout, color schemes, sections)
+/// lives in code, in `@repo/cv-core` and the web app; `id` matches it.
+/// Templates added in code get a hidden row at startup.
+model Template {
+  id        String         @id
+  tier      TemplateTier   @default(PREMIUM)
+  status    TemplateStatus @default(HIDDEN)
+  /// E.g. "Modern"; groups templates in the gallery.
+  category  String?
+  sortOrder Int            @default(0)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+/// An emailed invitation to join a team. The link carries the token; only
+/// its hash is stored. Accepted by signing in with the invited email.
+model OrganizationInvite {
+  id             String           @id @default(uuid())
+  organizationId String
+  /// Lowercase, as users' emails are stored.
+  email          String
+  role           OrganizationRole
+  tokenHash      String           @unique
+  /// Who sent it; kept as a plain id so the invite outlives their account.
+  invitedById    String?
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, email])
+}
+
+/// A server-to-server credential of an organization. The key is shown once;
+/// only its hash is stored. Checked on every request, so revoking is instant.
+model ApiKey {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  /// The random part after "cvb_live_", shown to tell keys apart.
+  prefix         String       @unique
+  secretHash     String       @unique
+  scopes         String[]
+  /// Who made it; a plain id, so the key outlives their membership.
+  createdById    String?
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+/// A customer's embedded builder: where it may be shown, how it looks and
+/// what its users may do. `publicKey` is safe to put in a web page.
+model EmbedConfig {
+  id             String             @id @default(uuid())
+  organizationId String
+  name           String
+  publicKey      String             @unique
+  /// Origins allowed to show it in a frame, e.g. "https://careers.acme.com".
+  allowedOrigins String[]
+  /// Colors, font and corner radius; see `TEmbedTheme`.
+  theme          Json               @default("{}")
+  /// Logo, company name and whether "Made with CV Builder" shows.
+  branding       Json               @default("{}")
+  /// Templates offered; empty means every one the plan includes.
+  templateIds    String[]
+  /// Editor steps shown; empty means all.
+  sections       String[]
+  /// Extras like "pdf.download"; see `EMBED_FEATURES`.
+  features       String[]
+  disabledAt     DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  launchTokens   EmbedLaunchToken[]
+
+  @@index([organizationId])
+}
+
+/// A customer's end user, known only by the id the customer gave. Has no
+/// login of ours; reaches the builder through launch tokens.
+model ExternalUser {
+  id             String             @id @default(uuid())
+  organizationId String
+  /// The customer's own id for them.
+  externalId     String
+  email          String?
+  name           String?
+  createdAt      DateTime           @default(now())
+  lastSeenAt     DateTime?
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cvs            Cv[]
+  launchTokens   EmbedLaunchToken[]
+
+  @@unique([organizationId, externalId])
+}
+
+/// A single-use, one-minute ticket the customer's server gets for one end
+/// user, exchanged by the embed for a session. Only its hash is stored.
+model EmbedLaunchToken {
+  id             String       @id @default(uuid())
+  tokenHash      String       @unique
+  embedConfigId  String
+  externalUserId String
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  embedConfig    EmbedConfig  @relation(fields: [embedConfigId], references: [id], onDelete: Cascade)
+  externalUser   ExternalUser @relation(fields: [externalUserId], references: [id], onDelete: Cascade)
 }

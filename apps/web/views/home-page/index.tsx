@@ -23,8 +23,8 @@ import PlanCard from "@/components/plan-card";
 import SiteSection from "@/components/site-section";
 import TemplatePreview from "@/components/template-preview";
 import { cvFonts } from "@/fonts";
-import { templates } from "@/templates";
-import { PLANS } from "@/utils/pricing";
+import { DEFAULT_CURRENCY } from "@repo/cv-core";
+import { toPlan } from "@/utils/pricing";
 import { PRICING_PATH, SECTION_VARIANT } from "@/utils/site";
 import { useStartCvHref } from "@/utils/start-cv";
 import {
@@ -56,28 +56,36 @@ import {
   SHomeTemplatesTrack,
   SHomeYes,
 } from "@/views/home-page/styles";
+import type { TTemplate } from "@/templates";
+import { fallbackTemplates, offeredTemplates } from "@/utils/offered-templates";
 import type {
   THomeComparisonRow,
   THomeFeature,
+  THomePageProps,
   THomeStep,
 } from "@/views/home-page/types";
 
-const colorSchemeCount = templates.reduce(
-  (count, template) => count + template.colorSchemes.length,
-  0,
-);
+const colorSchemeCountOf = (templates: TTemplate[]) =>
+  templates.reduce(
+    (count, template) => count + template.colorSchemes.length,
+    0,
+  );
 
 /** Left, right, then the one in front. */
 const HERO_TEMPLATE_IDS = ["modern", "creative", "default"];
-const heroTemplates = HERO_TEMPLATE_IDS.map(
-  (id, index) =>
-    templates.find((template) => template.id === id) ?? templates[index],
-).filter((template) => template !== undefined);
+const heroTemplatesOf = (templates: TTemplate[]) =>
+  HERO_TEMPLATE_IDS.map(
+    (id, index) =>
+      templates.find((template) => template.id === id) ?? templates[index],
+  ).filter((template) => template !== undefined);
 
-const FEATURES: THomeFeature[] = [
+const featuresOf = (
+  templateCount: number,
+  colorSchemeCount: number,
+): THomeFeature[] => [
   {
     icon: <FileIcon />,
-    title: `${templates.length} professional templates`,
+    title: `${templateCount} professional templates`,
     description:
       "From classic to creative, every template is designed to be clear, readable and easy for recruiters to scan.",
   },
@@ -177,8 +185,14 @@ const SectionDescription = ({ children }: { children: string }) => (
   </SHomeSectionDescription>
 );
 
-const HomePage = () => {
+const HomePage = ({ plans, templates: published }: THomePageProps) => {
   const startHref = useStartCvHref();
+  const templates = published
+    ? offeredTemplates(published)
+    : fallbackTemplates();
+  const colorSchemeCount = colorSchemeCountOf(templates);
+  const heroTemplates = heroTemplatesOf(templates);
+  const features = featuresOf(templates.length, colorSchemeCount);
 
   return (
     <SHomePage direction="column">
@@ -256,7 +270,7 @@ const HomePage = () => {
                 }
               </SectionDescription>
               <SHomeGrid columns={3}>
-                {FEATURES.map(({ icon, title, description }) => (
+                {features.map(({ icon, title, description }) => (
                   <SHomeFeature key={title} radius="lg">
                     <SHomeFeatureIcon>{icon}</SHomeFeatureIcon>
                     <Heading as="h5">{title}</Heading>
@@ -366,8 +380,17 @@ const HomePage = () => {
                 }
               </SectionDescription>
               <SHomePlans>
-                {PLANS.map((plan) => (
-                  <PlanCard key={plan.id} plan={plan} period="yearly" />
+                {(plans?.plans ?? []).map((plan) => (
+                  <PlanCard
+                    key={plan.key}
+                    plan={toPlan(
+                      plan,
+                      plans?.currency ?? DEFAULT_CURRENCY,
+                      plans?.approximate,
+                      plans?.freeTemplateCount,
+                    )}
+                    period="yearly"
+                  />
                 ))}
               </SHomePlans>
               <Flex justify="center">
@@ -413,4 +436,3 @@ const HomePage = () => {
 };
 
 export default HomePage;
-

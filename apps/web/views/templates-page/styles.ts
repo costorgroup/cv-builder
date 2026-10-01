@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import { Grid } from "@costor/ui";
+import PremiumBadge from "@/components/premium-badge";
 import type { TSTemplatesPageCardProps } from "@/views/templates-page/types";
 
 export const STemplatesPageGrid = styled(Grid)`
@@ -40,6 +41,13 @@ export const STemplatesPagePreview = styled.div`
     background-color: ${theme.palette.common.white};
     box-shadow: ${theme.shadows[2]};
   `}
+`;
+
+/** On the preview's top corner, for templates the plan doesn't include. */
+export const STemplatesPageBadge = styled(PremiumBadge)`
+  position: absolute;
+  top: ${({ theme }) => theme.spacing(3)};
+  right: ${({ theme }) => theme.spacing(3)};
 `;
 
 /** Covers the whole card, so the preview inside can stay plain markup. */

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { CvDisplay, CvExportModal, ThemeToggle } from "@/components";
+import { useCvEditorEnv } from "@/providers/cv-editor-env";
 import { CvPlaceholders, CvProvider, useCv } from "@/providers/cv-provider";
 import {
   SManageCvLayout,
@@ -26,10 +27,17 @@ import type {
 } from "@/layouts/manage-cv-layout/types";
 import ButtonLink from "@/components/button-link";
 import { AuthProvider, useAuth } from "@/providers/auth-provider";
+import {
+  EntitlementsProvider,
+  useEntitlements,
+} from "@/providers/entitlements-provider";
 import { ApiError } from "@/utils/api-client";
 import { signInPath } from "@/utils/auth-routes";
 import { cvEditorPath } from "@/utils/cv-editor";
 import { cvsApi } from "@/utils/cvs-api";
+import { MY_CVS_PATH } from "@/utils/dashboard-path";
+import { planRestrictionText } from "@/utils/plan-restriction";
+import { PRICING_PATH } from "@/utils/site";
 import {
   Button,
   Flex,
@@ -56,12 +64,15 @@ import {
   Skeleton,
   StarIcon,
 } from "@costor/ui";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { findTemplateSpec } from "@repo/cv-core";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
+  Suspense,
   useMemo,
+  useRef,
   useState,
   type ReactElement,
 } from "react";
@@ -83,12 +94,34 @@ const navTooltip = (label: string) => {
 /** The tooltip's Panel, with only a sliver of padding around the label. */
 const NAV_TOOLTIP_PANEL = { style: { padding: "2px 8px" } };
 
-const ManageCvLayoutContent = ({
+/**
+ * The editor: steps, the current step, completion and the live preview.
+ * The app's by default; the embedded builder sets its own steps, paths and
+ * branding through the editor environment.
+ */
+export const ManageCvLayoutContent = ({
   children,
   cvId,
 }: TManageCvLayoutContentProps) => {
-  const { data, completion } = useCv();
+  const env = useCvEditorEnv();
+  const { data, completion, template } = useCv();
   const [exportOpen, setExportOpen] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const shownTemplateId = useRef(template.id);
+
+  // Picking another template shows it from the top, not wherever the
+  // previous one was scrolled to.
+  useEffect(() => {
+    if (shownTemplateId.current === template.id) return;
+    shownTemplateId.current = template.id;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    previewRef.current?.scrollTo({
+      top: 0,
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+  }, [template.id]);
   // Red while a required field is empty, green once everything is filled.
   const completionColor = !completion.requiredComplete
     ? "error"
@@ -99,9 +132,9 @@ const ManageCvLayoutContent = ({
   const router = useRouter();
 
   const navItems = useMemo<TManageCvLayoutNavItem[]>(() => {
-    const basePath = cvEditorPath(cvId);
+    const basePath = (env.editorPath ?? cvEditorPath)(cvId);
 
-    return [
+    const items: TManageCvLayoutNavItem[] = [
       {
         label: "Templates",
         description: "Choose a layout that best showcases your experience",
@@ -176,7 +209,12 @@ const ManageCvLayoutContent = ({
         count: data.interests.length,
       },
     ];
-  }, [cvId, data]);
+    return env.steps
+      ? items.filter((item) =>
+          env.steps?.some((step) => item.href === `${basePath}/${step}`),
+        )
+      : items;
+  }, [cvId, data, env.editorPath, env.steps]);
 
   const activeItemId = useMemo<number>(() => {
     return navItems.findIndex((item) => item.href === pathname);
@@ -214,7 +252,9 @@ const ManageCvLayoutContent = ({
       <SManageCvLayoutCardWrapper>
         <SManageCvLayoutCard radius="lg">
           <SManageCvLayoutBrand>
-            <Image src="/logo.png" alt="" width={40} height={40} priority />
+            {env.brand ?? (
+              <Image src="/logo.png" alt="" width={40} height={40} priority />
+            )}
           </SManageCvLayoutBrand>
           <SManageCvLayoutCardHeader>
             <Heading as="h6">{activeNavItem?.label}</Heading>
@@ -243,9 +283,11 @@ const ManageCvLayoutContent = ({
                 </Tooltip>
               );
             })}
-            <SManageCvLayoutNavActions>
-              <ThemeToggle />
-            </SManageCvLayoutNavActions>
+            {(env.themeToggle ?? true) && (
+              <SManageCvLayoutNavActions>
+                <ThemeToggle />
+              </SManageCvLayoutNavActions>
+            )}
           </SManageCvLayoutNavContent>
           <SManageCvLayoutContent>{children}</SManageCvLayoutContent>
           <SManageCvLayoutCardFooter variant="border">
@@ -276,7 +318,7 @@ const ManageCvLayoutContent = ({
           </SManageCvLayoutCardFooter>
         </SManageCvLayoutCard>
       </SManageCvLayoutCardWrapper>
-      <SManageCvLayoutPreview>
+      <SManageCvLayoutPreview ref={previewRef}>
         <SManageCvLayoutPreviewCenter>
           <CvPlaceholders enabled={showPlaceholders}>
             <CvDisplay />
@@ -293,7 +335,7 @@ const ManageCvLayoutContent = ({
 };
 
 /** Placeholder layout while the saved CV loads. */
-const ManageCvLayoutSkeleton = () => (
+export const ManageCvLayoutSkeleton = () => (
   <SManageCvLayout aria-busy>
     <SManageCvLayoutCardWrapper>
       <Skeleton width="100%" height="100%" radius="lg" />
@@ -310,9 +352,52 @@ const ManageCvLayoutSkeleton = () => (
   </SManageCvLayout>
 );
 
+/** Shown instead of the editor when the plan has no room for another CV. */
+const ManageCvLayoutCvLimit = ({
+  used,
+  max,
+}: {
+  used: number;
+  max: number;
+}) => {
+  const { title, description } = planRestrictionText({
+    kind: "limit",
+    limit: "cv.max",
+    used,
+    max,
+  });
+  return (
+    <SManageCvLayoutMessage>
+      <Empty variant="surface" radius="lg">
+        <EmptyHeader>
+          <EmptyTitle>{title}</EmptyTitle>
+          <EmptyDescription>{description}</EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Flex gap={2} justify="center" wrap="wrap">
+            <Button as={ButtonLink} href={MY_CVS_PATH}>
+              Back to my CVs
+            </Button>
+            <Button
+              as={ButtonLink}
+              href={PRICING_PATH}
+              variant="solid"
+              color="primary"
+            >
+              See plans
+            </Button>
+          </Flex>
+        </EmptyContent>
+      </Empty>
+    </SManageCvLayoutMessage>
+  );
+};
+
 /** Signed-in only; loads the saved CV when editing one. */
 const ManageCvLayoutLoader = ({ children, cvId }: TManageCvLayoutProps) => {
   const auth = useAuth();
+  const entitlements = useEntitlements();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const [load, setLoad] = useState<TManageCvLayoutLoad>();
@@ -346,8 +431,23 @@ const ManageCvLayoutLoader = ({ children, cvId }: TManageCvLayoutProps) => {
 
   if (!signedIn) return <ManageCvLayoutSkeleton />;
   if (!cvId) {
+    // A new CV: first make sure the plan has room for it. If the plan can't
+    // be loaded, the editor opens anyway; saving still checks.
+    if (entitlements.status === "loading") return <ManageCvLayoutSkeleton />;
+    if (entitlements.status === "ready") {
+      const { used, max } = entitlements.usage.cvs;
+      if (max !== null && used >= max) {
+        return <ManageCvLayoutCvLimit used={used} max={max} />;
+      }
+    }
+    // `?template=` (e.g. from the templates gallery) picks the first one.
+    const startTemplateId = searchParams.get("template");
+    const startAppearance =
+      startTemplateId && findTemplateSpec(startTemplateId)
+        ? { templateId: startTemplateId }
+        : undefined;
     return (
-      <CvProvider>
+      <CvProvider initialAppearance={startAppearance}>
         <ManageCvLayoutContent>{children}</ManageCvLayoutContent>
       </CvProvider>
     );
@@ -372,7 +472,7 @@ const ManageCvLayoutLoader = ({ children, cvId }: TManageCvLayoutProps) => {
           <EmptyContent>
             <Button
               as={ButtonLink}
-              href="/dashboard"
+              href={MY_CVS_PATH}
               variant="solid"
               color="primary"
             >
@@ -390,6 +490,7 @@ const ManageCvLayoutLoader = ({ children, cvId }: TManageCvLayoutProps) => {
       key={cv.id}
       initialData={cv.data}
       initialAppearance={cv.appearance}
+      savedAppearance={cv.appearance}
       initialFileName={cv.name}
     >
       <ManageCvLayoutContent cvId={cv.id}>{children}</ManageCvLayoutContent>
@@ -399,9 +500,13 @@ const ManageCvLayoutLoader = ({ children, cvId }: TManageCvLayoutProps) => {
 
 const ManageCvLayout = ({ children, cvId }: TManageCvLayoutProps) => (
   <AuthProvider>
-    <ManageCvLayoutLoader cvId={cvId}>{children}</ManageCvLayoutLoader>
+    <EntitlementsProvider>
+      {/* The loader reads `?template=`, so it renders on the client. */}
+      <Suspense fallback={<ManageCvLayoutSkeleton />}>
+        <ManageCvLayoutLoader cvId={cvId}>{children}</ManageCvLayoutLoader>
+      </Suspense>
+    </EntitlementsProvider>
   </AuthProvider>
 );
 
 export default ManageCvLayout;
-

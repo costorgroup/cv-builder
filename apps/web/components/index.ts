@@ -20,3 +20,6 @@ export { default as TemplatePreview } from "@/components/template-preview";
 export { default as PlanCard } from "@/components/plan-card";
 export { default as FaqList } from "@/components/faq-list";
 export { default as SiteSection } from "@/components/site-section";
+export { default as UpgradePrompt } from "@/components/upgrade-prompt";
+export { default as PremiumBadge } from "@/components/premium-badge";
+export { default as LockedFeaturesNotice } from "@/components/locked-features-notice";

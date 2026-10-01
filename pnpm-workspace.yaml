@@ -6,6 +6,7 @@ allowBuilds:
   prisma: true
   '@prisma/engines': true
   esbuild: true
+  '@scarf/scarf': false
 minimumReleaseAgeExclude:
   - '@turbo/darwin-64@2.11.3'
   - '@turbo/darwin-arm64@2.11.3'

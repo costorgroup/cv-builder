@@ -9,7 +9,13 @@ import {
   SPlanCardPrice,
 } from "@/components/plan-card/styles";
 import type { TPlanCardProps } from "@/components/plan-card/types";
-import { formatEuro, savingPercent } from "@/utils/pricing";
+import {
+  BILLING_PERIODS,
+  formatApproximate,
+  formatMoney,
+  savingPercent,
+} from "@/utils/pricing";
+import { SUBSCRIPTION_PATH } from "@/utils/dashboard-path";
 import { useStartCvHref } from "@/utils/start-cv";
 
 const PERIOD_NOTE = {
@@ -20,8 +26,13 @@ const PERIOD_NOTE = {
 
 export const PlanCard = ({ plan, period }: TPlanCardProps) => {
   const startHref = useStartCvHref();
-  const price = plan.prices?.[period];
-  const saving = plan.prices ? savingPercent(plan.prices, period) : 0;
+  // A plan not sold for this period shows the first one it is sold for.
+  const pricePeriod = plan.prices?.[period]
+    ? period
+    : BILLING_PERIODS.find(({ id }) => plan.prices?.[id])?.id;
+  const price = pricePeriod ? plan.prices?.[pricePeriod] : undefined;
+  const saving =
+    plan.prices && pricePeriod ? savingPercent(plan.prices, pricePeriod) : 0;
 
   return (
     <SPlanCard radius="lg" highlighted={plan.highlighted}>
@@ -29,7 +40,7 @@ export const PlanCard = ({ plan, period }: TPlanCardProps) => {
         <Flex align="center" justify="space-between" gap={2}>
           <Heading as="h4">{plan.name}</Heading>
           {plan.highlighted && (
-            <Chip size="sm" variant="solid" color="primary">
+            <Chip radius="pill" size="sm" variant="solid" color="primary">
               Most popular
             </Chip>
           )}
@@ -38,17 +49,26 @@ export const PlanCard = ({ plan, period }: TPlanCardProps) => {
       </Flex>
       <Flex direction="column" gap={2}>
         <SPlanCardPrice>
-          {formatEuro(price ? price.total / price.months : 0)}
+          {formatMoney(
+            price ? price.total / price.months : 0,
+            price?.currency ?? plan.currency,
+          )}
           <Small color="secondary">/ month</Small>
         </SPlanCardPrice>
+        {price && plan.approximate && (
+          <Small color="secondary">
+            {formatApproximate(price.total / price.months, plan.approximate)} /
+            month
+          </Small>
+        )}
         <Flex align="center" gap={2} wrap="wrap">
           <Small color="secondary">
-            {price
-              ? `${PERIOD_NOTE[period]} · ${formatEuro(price.total)}`
+            {price && pricePeriod
+              ? `${PERIOD_NOTE[pricePeriod]} · ${formatMoney(price.total, price.currency)}`
               : "Free forever, no card needed"}
           </Small>
           {saving > 0 && (
-            <Chip size="xs" variant="subtle" color="success">
+            <Chip radius="pill" size="xs" variant="subtle" color="success">
               Save {saving}%
             </Chip>
           )}
@@ -64,7 +84,12 @@ export const PlanCard = ({ plan, period }: TPlanCardProps) => {
       </SPlanCardFeatures>
       <Button
         as={ButtonLink}
-        href={startHref}
+        // Paid plans are bought on the Subscription page (signing in first).
+        href={
+          plan.prices
+            ? `${SUBSCRIPTION_PATH}?period=${(pricePeriod ?? period).toUpperCase()}`
+            : startHref
+        }
         variant={plan.highlighted ? "solid" : "outline"}
         color={plan.highlighted ? "primary" : "default"}
         size="lg"

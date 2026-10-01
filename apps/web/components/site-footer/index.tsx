@@ -10,6 +10,7 @@ import {
   SSiteFooterGrid,
   SSiteFooterLink,
 } from "@/components/site-footer/styles";
+import { MY_CVS_PATH } from "@/utils/dashboard-path";
 import { useAuth } from "@/providers/auth-provider";
 import {
   CONTACT_EMAIL,
@@ -26,7 +27,7 @@ const PRODUCT_LINKS: TSiteLink[] = [
 ];
 
 const SIGNED_IN_LINKS: TSiteLink[] = [
-  { label: "My CVs", href: "/dashboard" },
+  { label: "My CVs", href: MY_CVS_PATH },
   { label: "Settings", href: "/auth/change-password" },
   { label: "Sign out", href: "/auth/sign-out" },
 ];

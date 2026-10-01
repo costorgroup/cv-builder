@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavigationItem, NavigationItems, NavigationLogo } from "@costor/ui";
+import { MY_CVS_PATH } from "@/utils/dashboard-path";
 import { ThemeToggle } from "../theme-toggle";
 import { SAppNavigation } from "./styles";
 import type { TAppNavigationLink, TAppNavigationProps } from "./types";
 
 const LINKS: TAppNavigationLink[] = [
   { href: "/", label: "Home" },
-  { href: "/dashboard", label: "My CVs" },
+  { href: MY_CVS_PATH, label: "My CVs" },
 ];
 
 export const AppNavigation = (props: TAppNavigationProps) => {

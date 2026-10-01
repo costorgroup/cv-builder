@@ -17,6 +17,10 @@ export class MailService {
     this.log(to, 'Reset your password', `/auth/reset-password?token=${token}`);
   }
 
+  async sendTeamInvite(to: string, teamName: string, token: string) {
+    this.log(to, `Join ${teamName} on CV Builder`, `/invite/${token}`);
+  }
+
   private log(to: string, subject: string, path: string) {
     this.logger.log(`${subject} → ${to}`);
     // On its own line with no log prefix, so a narrow terminal pane (like

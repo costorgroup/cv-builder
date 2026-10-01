@@ -1,14 +1,19 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthTokenType, type User } from '../generated/prisma/client.js';
+import { AuditService } from '../audit/audit.service.js';
 import { MailService } from '../mail/mail.service.js';
+import { OrganizationsService } from '../organizations/organizations.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
+  LAST_ACTIVE_INTERVAL_MS,
   REFRESH_TOKEN_TTL_MS,
   RESET_PASSWORD_TOKEN_TTL_MS,
   VERIFY_ACCOUNT_TOKEN_TTL_MS,
@@ -21,6 +26,8 @@ import type {
 } from './auth.dto.js';
 import type {
   TAccessTokenPayload,
+  TActiveSessionUser,
+  TSessionClient,
   TAuthSession,
   TPublicUser,
 } from './auth.types.js';
@@ -32,49 +39,67 @@ import {
 import { createToken, hashToken } from './utils/token.js';
 
 const INVALID_LINK = 'This link is invalid or has expired';
+const ACCOUNT_DISABLED = 'This account has been disabled';
 const LINK_TOKEN_BYTES = 16;
 
-const toPublicUser = (user: User): TPublicUser => ({
+/** What the web app gets to see of a user. */
+export const toPublicUser = (user: User): TPublicUser => ({
   id: user.id,
   email: user.email,
   firstName: user.firstName,
   lastName: user.lastName,
   emailVerified: user.emailVerifiedAt !== null,
+  role: user.role,
   createdAt: user.createdAt,
 });
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly mail: MailService,
+    private readonly organizations: OrganizationsService,
+    private readonly audit: AuditService,
   ) {}
 
-  async signUp({
-    firstName,
-    lastName,
-    email,
-    password,
-  }: SignUpDto): Promise<TAuthSession> {
+  async signUp(
+    { firstName, lastName, email, password }: SignUpDto,
+    client: TSessionClient,
+  ): Promise<TAuthSession> {
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new ConflictException('An account with this email already exists');
     }
 
-    const user = await this.prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        passwordHash: await hashPassword(password),
+    const passwordHash = await hashPassword(password);
+    const { user, organization } = await this.prisma.$transaction(
+      async (tx) => {
+        const created = await tx.user.create({
+          data: { firstName, lastName, email, passwordHash },
+        });
+        return {
+          user: created,
+          organization: await this.organizations.createPersonal(tx, created),
+        };
       },
+    );
+    await this.audit.record({
+      actor: { type: 'USER', id: user.id },
+      action: 'USER_CREATED',
+      resource: { type: 'user', id: user.id },
+      organizationId: organization.id,
     });
     await this.sendVerifyAccount(user);
-    return this.createSession(user);
+    return this.createSession(user, client);
   }
 
-  async signIn({ email, password }: SignInDto): Promise<TAuthSession> {
+  async signIn(
+    { email, password }: SignInDto,
+    client: TSessionClient,
+  ): Promise<TAuthSession> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     const valid = await verifyPassword(
       password,
@@ -83,11 +108,21 @@ export class AuthService {
     if (!user || !valid) {
       throw new UnauthorizedException('Invalid email or password');
     }
-    return this.createSession(user);
+    // Only said once the password is right, so it reveals nothing to others.
+    if (user.disabledAt) throw new ForbiddenException(ACCOUNT_DISABLED);
+    await this.audit.record({
+      actor: { type: 'USER', id: user.id },
+      action: 'USER_SIGNED_IN',
+      resource: { type: 'user', id: user.id },
+    });
+    return this.createSession(user, client);
   }
 
   /** Swaps a refresh token for a new pair; the old one stops working. */
-  async refresh(refreshToken: string | undefined): Promise<TAuthSession> {
+  async refresh(
+    refreshToken: string | undefined,
+    client: TSessionClient,
+  ): Promise<TAuthSession> {
     const session = refreshToken
       ? await this.prisma.session.findUnique({
           where: { refreshTokenHash: hashToken(refreshToken) },
@@ -97,12 +132,17 @@ export class AuthService {
     if (!session || session.expiresAt < new Date()) {
       throw new UnauthorizedException('Session expired');
     }
+    if (session.user.disabledAt) {
+      throw new UnauthorizedException(ACCOUNT_DISABLED);
+    }
 
     const nextRefreshToken = createToken();
     await this.prisma.session.update({
       where: { id: session.id },
       data: {
         refreshTokenHash: hashToken(nextRefreshToken),
+        ipAddress: client.ipAddress,
+        lastUsedAt: new Date(),
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
       },
     });
@@ -174,6 +214,11 @@ export class AuthService {
       }),
       this.prisma.session.deleteMany({ where: { userId } }),
     ]);
+    await this.audit.record({
+      actor: { type: 'USER', id: userId },
+      action: 'PASSWORD_RESET',
+      resource: { type: 'user', id: userId },
+    });
   }
 
   /** Changes the password and signs out every other device. */
@@ -195,22 +240,67 @@ export class AuthService {
         where: { userId, id: { not: sessionId } },
       }),
     ]);
-  }
-
-  async sessionExists(sessionId: string) {
-    const count = await this.prisma.session.count({
-      where: { id: sessionId, expiresAt: { gt: new Date() } },
+    await this.audit.record({
+      actor: { type: 'USER', id: userId },
+      action: 'PASSWORD_CHANGED',
+      resource: { type: 'user', id: userId },
     });
-    return count > 0;
   }
 
-  private async createSession(user: User): Promise<TAuthSession> {
+  /**
+   * The user behind a session that hasn't expired or been revoked, or null.
+   * Also null once the account is disabled, which signs it out everywhere.
+   */
+  async findActiveSessionUser(
+    sessionId: string,
+  ): Promise<TActiveSessionUser | null> {
+    const session = await this.prisma.session.findFirst({
+      where: {
+        id: sessionId,
+        expiresAt: { gt: new Date() },
+        user: { disabledAt: null },
+      },
+      select: {
+        user: { select: { id: true, role: true, lastActiveAt: true } },
+      },
+    });
+    return session?.user ?? null;
+  }
+
+  /**
+   * Notes that the user was just active; written at most once per
+   * `LAST_ACTIVE_INTERVAL_MS`, not on every request. Never throws.
+   */
+  async recordActivity({ id, lastActiveAt }: TActiveSessionUser) {
+    const now = Date.now();
+    if (
+      lastActiveAt &&
+      now - lastActiveAt.getTime() < LAST_ACTIVE_INTERVAL_MS
+    ) {
+      return;
+    }
+    try {
+      await this.prisma.user.update({
+        where: { id },
+        data: { lastActiveAt: new Date(now) },
+      });
+    } catch (error) {
+      this.logger.warn(`Couldn't record activity for user ${id}`, error);
+    }
+  }
+
+  private async createSession(
+    user: User,
+    { userAgent, ipAddress }: TSessionClient,
+  ): Promise<TAuthSession> {
     const refreshToken = createToken();
     const session = await this.prisma.session.create({
       data: {
         userId: user.id,
         refreshTokenHash: hashToken(refreshToken),
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+        userAgent,
+        ipAddress,
       },
     });
     return {

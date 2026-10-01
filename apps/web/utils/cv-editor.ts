@@ -1,22 +1,10 @@
-/** The editor's steps, in order; each is a URL segment. */
-export const CV_EDITOR_STEPS = [
-  "templates",
-  "appearance",
-  "personal-information",
-  "social-media",
-  "work-experience",
-  "education",
-  "skills",
-  "languages",
-  "projects",
-  "certificates",
-  "interests",
-] as const;
+import { CV_EDITOR_STEPS, type TCvEditorStep } from "@repo/cv-core";
 
-export type TCvEditorStep = (typeof CV_EDITOR_STEPS)[number];
-
-export const isCvEditorStep = (value: string): value is TCvEditorStep =>
-  (CV_EDITOR_STEPS as readonly string[]).includes(value);
+export {
+  CV_EDITOR_STEPS,
+  isCvEditorStep,
+  type TCvEditorStep,
+} from "@repo/cv-core";
 
 /** Where the editor lives: a new CV, or a saved one by id. */
 export const cvEditorPath = (cvId?: string) =>

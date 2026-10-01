@@ -1,21 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
+  Alert,
   Button,
   CheckIcon,
   Container,
   Flex,
   SectionGroup,
+  Small,
   Text,
 } from "@costor/ui";
+import { DEFAULT_CURRENCY } from "@repo/cv-core";
+import CurrencyPicker from "@/components/currency-picker";
 import FaqList, { type TFaqItem } from "@/components/faq-list";
 import PlanCard from "@/components/plan-card";
 import SiteSection from "@/components/site-section";
 import {
-  BILLING_PERIODS,
-  PLAN_COMPARISON,
-  PLANS,
+  approximateNote,
+  billingPeriodsOf,
+  planComparison,
+  toPlan,
   type TBillingPeriod,
 } from "@/utils/pricing";
 import {
@@ -32,6 +37,7 @@ import {
   SPricingYes,
 } from "@/views/pricing-page/styles";
 import { SECTION_VARIANT } from "@/utils/site";
+import type { TPricingPageProps } from "@/views/pricing-page/types";
 
 const FAQ: TFaqItem[] = [
   {
@@ -42,12 +48,12 @@ const FAQ: TFaqItem[] = [
   {
     question: "Does my subscription renew automatically?",
     answer:
-      "No. Premium is a one-off payment for the period you choose. When it ends you go back to the free plan unless you decide to buy again.",
+      "Yes. Premium renews at the end of each billing period until you cancel. You can cancel anytime from your dashboard, and you keep Premium until the period you paid for ends.",
   },
   {
     question: "What happens to my CVs when Premium ends?",
     answer:
-      "Nothing is deleted. Your CVs stay in your account and you can still open and download them; Premium-only options just become read-only.",
+      "Nothing is deleted. Your CVs stay in your account and you can still open, edit and download them. They keep the Premium look they already have; you just can't pick new Premium options or create CVs beyond the free plan's limit.",
   },
   {
     question: "Are there any hidden costs?",
@@ -77,8 +83,26 @@ const renderValue = (value: string | boolean) => {
   return value;
 };
 
-const PricingPage = () => {
-  const [period, setPeriod] = useState<TBillingPeriod>("yearly");
+const PricingPage = ({ plans }: TPricingPageProps) => {
+  const cards = useMemo(
+    () =>
+      (plans?.plans ?? []).map((plan) =>
+        toPlan(
+          plan,
+          plans?.currency ?? DEFAULT_CURRENCY,
+          plans?.approximate,
+          plans?.freeTemplateCount,
+        ),
+      ),
+    [plans],
+  );
+  const periods = billingPeriodsOf(cards);
+  const comparison = useMemo(() => planComparison(plans?.plans ?? []), [plans]);
+  const [chosenPeriod, setPeriod] = useState<TBillingPeriod>("yearly");
+  // Yearly by default, if any plan is sold yearly.
+  const period = periods.some(({ id }) => id === chosenPeriod)
+    ? chosenPeriod
+    : (periods[0]?.id ?? chosenPeriod);
 
   return (
     <SPricingPage direction="column">
@@ -90,27 +114,47 @@ const PricingPage = () => {
             unlimited CVs.
           </Text>
         </Flex>
-        <SPricingPeriods role="group" aria-label="Billing period">
-          {BILLING_PERIODS.map(({ id, label }) => (
-            <Button
-              key={id}
-              type="button"
-              size="sm"
-              radius="pill"
-              variant={id === period ? "solid" : "ghost"}
-              color={id === period ? "primary" : "default"}
-              aria-pressed={id === period}
-              onClick={() => setPeriod(id)}
-            >
-              {label}
-            </Button>
-          ))}
-        </SPricingPeriods>
+        {!plans && (
+          <Alert color="warning" variant="subtle">
+            Plans couldn&apos;t be loaded right now. Try again in a moment.
+          </Alert>
+        )}
+        <Flex align="center" justify="center" gap={3} wrap="wrap">
+          {periods.length > 1 && (
+            <SPricingPeriods role="group" aria-label="Billing period">
+              {periods.map(({ id, label }) => (
+                <Button
+                  key={id}
+                  type="button"
+                  size="sm"
+                  radius="pill"
+                  variant={id === period ? "solid" : "ghost"}
+                  color={id === period ? "primary" : "default"}
+                  aria-pressed={id === period}
+                  onClick={() => setPeriod(id)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </SPricingPeriods>
+          )}
+          {plans && (
+            <CurrencyPicker
+              currency={plans.currency}
+              currencies={plans.currencies}
+            />
+          )}
+        </Flex>
         <SPricingPlans>
-          {PLANS.map((plan) => (
+          {cards.map((plan) => (
             <PlanCard key={plan.id} plan={plan} period={period} />
           ))}
         </SPricingPlans>
+        {plans?.approximate && (
+          <Small color="secondary">
+            {approximateNote(plans.approximate, plans.currency)}
+          </Small>
+        )}
       </SPricingHero>
 
       <Container maxWidth="lg" disableGutters>
@@ -120,33 +164,38 @@ const PricingPage = () => {
           color="primary"
           gap={16}
         >
-          <SiteSection title="Compare plans">
-            <SPricingSectionBody direction="column" align="center">
-              <SPricingTableCard radius="lg">
-                <SPricingTable>
-                  <thead>
-                    <tr>
-                      <th scope="col">Feature</th>
-                      {PLANS.map((plan) => (
-                        <th key={plan.id} scope="col">
-                          {plan.name}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {PLAN_COMPARISON.map(([feature, free, premium]) => (
-                      <tr key={feature}>
-                        <th scope="row">{feature}</th>
-                        <td>{renderValue(free)}</td>
-                        <td>{renderValue(premium)}</td>
+          {cards.length > 1 && (
+            <SiteSection title="Compare plans">
+              <SPricingSectionBody direction="column" align="center">
+                <SPricingTableCard radius="lg">
+                  <SPricingTable>
+                    <thead>
+                      <tr>
+                        <th scope="col">Feature</th>
+                        {cards.map((plan) => (
+                          <th key={plan.id} scope="col">
+                            {plan.name}
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </SPricingTable>
-              </SPricingTableCard>
-            </SPricingSectionBody>
-          </SiteSection>
+                    </thead>
+                    <tbody>
+                      {comparison.map(([feature, ...values]) => (
+                        <tr key={feature}>
+                          <th scope="row">{feature}</th>
+                          {values.map((value, index) => (
+                            <td key={cards[index]?.id ?? index}>
+                              {renderValue(value)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </SPricingTable>
+                </SPricingTableCard>
+              </SPricingSectionBody>
+            </SiteSection>
+          )}
 
           <SiteSection title="Pricing questions">
             <SPricingSectionBody direction="column" align="center">

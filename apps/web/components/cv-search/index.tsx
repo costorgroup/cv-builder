@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SearchIcon, TextField } from "@costor/ui";
 import { SCvSearch } from "@/components/cv-search/styles";
-import { dashboardPath } from "@/utils/dashboard-path";
+import { myCvsPath } from "@/utils/dashboard-path";
 
 const SEARCH_DELAY_MS = 300;
 
@@ -29,7 +29,7 @@ export const CvSearch = () => {
     const next = query.trim();
     if (next === search) return;
     const timer = setTimeout(
-      () => router.replace(dashboardPath(next)),
+      () => router.replace(myCvsPath(next)),
       SEARCH_DELAY_MS,
     );
     return () => clearTimeout(timer);

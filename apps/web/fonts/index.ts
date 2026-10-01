@@ -6,8 +6,10 @@ import {
   Playfair_Display,
   Roboto,
 } from "next/font/google";
+import { CV_FONTS, type TCvFontSpec } from "@repo/cv-core";
 
 // next/font needs literal options, so every font is declared on its own.
+// Each `variable` must be `--font-cv-<id>` for its id in `CV_FONTS`.
 const inter = Inter({ subsets: ["latin"], variable: "--font-cv-inter" });
 const roboto = Roboto({ subsets: ["latin"], variable: "--font-cv-roboto" });
 const lato = Lato({
@@ -36,25 +38,16 @@ export type TCvFont = {
   family: string;
 };
 
+const toCvFont = ({ id, name, generic }: TCvFontSpec): TCvFont => ({
+  id,
+  name,
+  family: `var(--font-cv-${id}), ${generic}`,
+});
+
+/** `CV_FONTS` from `@repo/cv-core`, with the CSS to use each one. */
 export const cvFonts: [TCvFont, ...TCvFont[]] = [
-  { id: "inter", name: "Inter", family: `var(--font-cv-inter), sans-serif` },
-  { id: "roboto", name: "Roboto", family: `var(--font-cv-roboto), sans-serif` },
-  { id: "lato", name: "Lato", family: `var(--font-cv-lato), sans-serif` },
-  {
-    id: "montserrat",
-    name: "Montserrat",
-    family: `var(--font-cv-montserrat), sans-serif`,
-  },
-  {
-    id: "merriweather",
-    name: "Merriweather",
-    family: `var(--font-cv-merriweather), serif`,
-  },
-  {
-    id: "playfair-display",
-    name: "Playfair Display",
-    family: `var(--font-cv-playfair-display), serif`,
-  },
+  toCvFont(CV_FONTS[0]),
+  ...CV_FONTS.slice(1).map(toCvFont),
 ];
 
 export const findCvFont = (id?: string): TCvFont =>

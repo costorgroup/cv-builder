@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { MailModule } from '../mail/mail.module.js';
+import { OrganizationsModule } from '../organizations/organizations.module.js';
 import { ACCESS_TOKEN_TTL_MS } from './auth.constants.js';
 import { AuthController } from './auth.controller.js';
 import { AuthGuard } from './auth.guard.js';
@@ -9,6 +10,7 @@ import { AuthService } from './auth.service.js';
 @Module({
   imports: [
     MailModule,
+    OrganizationsModule,
     JwtModule.registerAsync({
       useFactory: () => {
         const secret = process.env.JWT_SECRET;

@@ -11,6 +11,8 @@ import {
   TextField,
 } from "@costor/ui";
 import CvDisplay from "@/components/cv-display";
+import LockedFeaturesNotice from "@/components/locked-features-notice";
+import UpgradePrompt from "@/components/upgrade-prompt";
 import {
   SCvExportModalBody,
   SCvExportModalPage,
@@ -23,11 +25,22 @@ import type {
   TCvExportModalProps,
   TCvExportSaveState,
 } from "@/components/cv-export-modal/types";
+import { useCvEditorEnv } from "@/providers/cv-editor-env";
 import { useCv } from "@/providers/cv-provider/context";
 import type { TCvDocument } from "@/providers/cv-provider/types";
 import { ApiError } from "@/utils/api-client";
 import { cvsApi } from "@/utils/cvs-api";
-import { downloadCvPdf } from "@/utils/download-cv-pdf";
+import { MY_CVS_PATH } from "@/utils/dashboard-path";
+import {
+  downloadCvPdf,
+  saveCvPdf,
+  type TCvPdfSource,
+} from "@/utils/download-cv-pdf";
+import { useLockedFeatures } from "@/utils/locked-features";
+import {
+  planRestrictionOf,
+  type TPlanRestriction,
+} from "@/utils/plan-restriction";
 
 /**
  * Last look at the finished CV: page-by-page preview, file name and PDF.
@@ -36,17 +49,15 @@ import { downloadCvPdf } from "@/utils/download-cv-pdf";
  */
 export const CvExportModal = ({ open, onClose, cvId }: TCvExportModalProps) => {
   const router = useRouter();
-  const {
-    data,
-    template,
-    colorSchemeId,
-    sizes,
-    fontId,
-    fontScale,
-    fileName,
-    setFileName,
-    resolvedFileName,
-  } = useCv();
+  const env = useCvEditorEnv();
+  const canDownload = env.canDownload ?? true;
+  const { data, appearance, fileName, setFileName, resolvedFileName } = useCv();
+  // Premium options the plan doesn't include block saving and downloading
+  // up front; the notices say what to change.
+  const locked = useLockedFeatures();
+  const blocked = locked.length > 0;
+  // What the plan refused on the last save or download, if anything.
+  const [restriction, setRestriction] = useState<TPlanRestriction>();
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
   const [downloadState, setDownloadState] =
@@ -54,71 +65,88 @@ export const CvExportModal = ({ open, onClose, cvId }: TCvExportModalProps) => {
   const [saveState, setSaveState] = useState<TCvExportSaveState>({
     status: "idle",
   });
-  const [downloadOnSave, setDownloadOnSave] = useState(true);
+  const [downloadOnSave, setDownloadOnSave] = useState(canDownload);
   // Once saved, a retry (e.g. after the PDF failed) updates this CV instead
   // of creating another.
   const [savedCvId, setSavedCvId] = useState(cvId);
-  const busy = saveState.status === "saving" || saveState.status === "downloading";
+  const busy =
+    saveState.status === "saving" || saveState.status === "downloading";
   // The CV may have fewer pages than the one last viewed.
   const currentPage = Math.min(page, pageCount);
 
-  const cvDocument: TCvDocument = {
-    data,
-    appearance: {
-      templateId: template.id,
-      colorSchemeId,
-      sizes,
-      fontId,
-      fontScale,
-    },
-  };
+  const cvDocument: TCvDocument = { data, appearance };
+
+  /** The PDF through the embed's own API, or the app's. */
+  const download = async (source: TCvPdfSource) =>
+    env.fetchPdf
+      ? saveCvPdf(await env.fetchPdf(source), resolvedFileName)
+      : downloadCvPdf(source, resolvedFileName);
 
   const onDownload = async () => {
     setDownloadState("loading");
+    setRestriction(undefined);
     try {
-      await downloadCvPdf(cvDocument, resolvedFileName);
+      await download({ ...cvDocument, cvId: savedCvId });
       setDownloadState("idle");
     } catch (error) {
-      console.error(error);
-      setDownloadState("error");
+      const refused = planRestrictionOf(error);
+      if (!refused) console.error(error);
+      setRestriction(refused);
+      setDownloadState(refused ? "idle" : "error");
     }
   };
 
   const onSave = async () => {
     setSaveState({ status: "saving" });
+    setRestriction(undefined);
     const body = { name: resolvedFileName, ...cvDocument };
+    let saved;
     try {
-      const saved = await (savedCvId
-        ? cvsApi.update(savedCvId, body)
-        : cvsApi.create(body));
+      saved = await (env.save
+        ? env.save(savedCvId, body)
+        : savedCvId
+          ? cvsApi.update(savedCvId, body)
+          : cvsApi.create(body));
       setSavedCvId(saved.id);
     } catch (error) {
-      setSaveState({
-        status: "error",
-        message: `Couldn't save your CV: ${
-          error instanceof ApiError
-            ? error.message
-            : "couldn't reach the server."
-        }`,
-      });
+      const refused = planRestrictionOf(error);
+      setRestriction(refused);
+      // A plan refusal is explained by its upgrade prompt instead.
+      setSaveState(
+        refused
+          ? { status: "idle" }
+          : {
+              status: "error",
+              message: `Couldn't save your CV: ${
+                error instanceof ApiError
+                  ? error.message
+                  : "couldn't reach the server."
+              }`,
+            },
+      );
       return;
     }
 
-    if (downloadOnSave) {
+    if (canDownload && downloadOnSave) {
       setSaveState({ status: "downloading" });
       try {
-        await downloadCvPdf(cvDocument, resolvedFileName);
+        // Just saved, so the stored CV is what's on screen.
+        await download({ id: saved.id });
       } catch (error) {
-        console.error(error);
+        const refused = planRestrictionOf(error);
+        if (!refused) console.error(error);
+        setRestriction(refused);
         setSaveState({
           status: "error",
-          message:
-            "Your CV was saved, but the PDF couldn't be created. Try again, or untick the download.",
+          message: refused
+            ? "Your CV was saved, but the PDF wasn't made."
+            : "Your CV was saved, but the PDF couldn't be created. Try again, or untick the download.",
         });
         return;
       }
     }
-    router.push("/dashboard");
+    if (env.onSaved) env.onSaved(saved);
+    else router.push(MY_CVS_PATH);
   };
 
   return (
@@ -134,7 +162,7 @@ export const CvExportModal = ({ open, onClose, cvId }: TCvExportModalProps) => {
           <Button
             variant="solid"
             color="primary"
-            disabled={busy}
+            disabled={busy || blocked}
             onClick={onSave}
           >
             {saveState.status === "saving"
@@ -168,6 +196,13 @@ export const CvExportModal = ({ open, onClose, cvId }: TCvExportModalProps) => {
           />
         </SCvExportModalPreview>
         <SCvExportModalSettings direction="column" gap={5}>
+          <LockedFeaturesNotice />
+          {/* A refused feature the list above already names isn't repeated. */}
+          {restriction &&
+            !(
+              restriction.kind === "feature" &&
+              locked.includes(restriction.feature)
+            ) && <UpgradePrompt restriction={restriction} />}
           <TextField
             label="File Name"
             variant="subtle"
@@ -177,21 +212,27 @@ export const CvExportModal = ({ open, onClose, cvId }: TCvExportModalProps) => {
             onChange={(event) => setFileName(event.target.value)}
             helperText={`Saved as "${resolvedFileName}.pdf"`}
           />
-          <CheckBox
-            label="Download PDF when saving"
-            size="sm"
-            checked={downloadOnSave}
-            onChange={(event) => setDownloadOnSave(event.target.checked)}
-          />
-          <Button
-            variant="subtle"
-            color="primary"
-            fullWidth
-            disabled={downloadState === "loading"}
-            onClick={onDownload}
-          >
-            {downloadState === "loading" ? "Preparing PDF…" : "Download as PDF"}
-          </Button>
+          {canDownload && (
+            <>
+              <CheckBox
+                label="Download PDF when saving"
+                size="sm"
+                checked={downloadOnSave}
+                onChange={(event) => setDownloadOnSave(event.target.checked)}
+              />
+              <Button
+                variant="subtle"
+                color="primary"
+                fullWidth
+                disabled={downloadState === "loading" || blocked}
+                onClick={onDownload}
+              >
+                {downloadState === "loading"
+                  ? "Preparing PDF…"
+                  : "Download as PDF"}
+              </Button>
+            </>
+          )}
           {downloadState === "error" && (
             <Small>Couldn&apos;t create the PDF. Try again.</Small>
           )}

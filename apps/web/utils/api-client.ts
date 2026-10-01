@@ -3,6 +3,8 @@ export class ApiError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** The whole error body, e.g. the `code` and usage of a plan refusal. */
+    readonly body: Record<string, unknown> = {},
   ) {
     super(message);
   }
@@ -14,17 +16,18 @@ export type TApiRequestOptions = {
   /** Signed-in routes; retried once after refreshing an expired session. */
   authenticated?: boolean;
   signal?: AbortSignal;
+  /** How to read a successful response; JSON unless it's a file. */
+  responseType?: "json" | "blob";
 };
 
 const readError = async (response: Response) => {
   try {
+    const body = (await response.json()) as Record<string, unknown>;
     // Nest sends `message` as a string, or a list for validation errors.
-    const { message } = (await response.json()) as {
-      message?: string | string[];
-    };
-    return Array.isArray(message) ? message[0] : message;
+    const { message } = body as { message?: string | string[] };
+    return { body, message: Array.isArray(message) ? message[0] : message };
   } catch {
-    return undefined;
+    return { body: {}, message: undefined };
   }
 };
 
@@ -39,6 +42,7 @@ export const apiRequest = async <T = void>(
     method = "POST",
     authenticated = false,
     signal,
+    responseType = "json",
   }: TApiRequestOptions = {},
 ): Promise<T> => {
   const send = () =>
@@ -54,10 +58,15 @@ export const apiRequest = async <T = void>(
     response = await send();
   }
   if (!response.ok) {
+    const { body, message } = await readError(response);
     throw new ApiError(
       response.status,
-      (await readError(response)) ?? "Something went wrong. Try again.",
+      message ?? "Something went wrong. Try again.",
+      body,
     );
   }
-  return (response.status === 204 ? undefined : await response.json()) as T;
+  if (response.status === 204) return undefined as T;
+  return (
+    responseType === "blob" ? await response.blob() : await response.json()
+  ) as T;
 };

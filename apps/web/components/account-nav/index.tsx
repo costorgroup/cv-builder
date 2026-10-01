@@ -10,6 +10,7 @@ import {
   Menu,
   MenuItem,
   SettingsIcon,
+  UsersIcon,
   Skeleton,
   Small,
   Strong,
@@ -26,13 +27,21 @@ import {
 import type { TAccountNavMenuItem } from "@/components/account-nav/types";
 import { useAuth } from "@/providers/auth-provider";
 import { fullName } from "@/utils/auth-api";
+import { ADMIN_PATH } from "@/utils/admin-path";
+import { ACCOUNT_PATH, MY_CVS_PATH } from "@/utils/dashboard-path";
 
 const MENU_ITEMS: TAccountNavMenuItem[] = [
-  { label: "My CVs", href: "/dashboard", icon: <FileIcon /> },
-  // No settings page yet; changing the password is the only setting.
-  { label: "Settings", href: "/auth/change-password", icon: <SettingsIcon /> },
+  { label: "My CVs", href: MY_CVS_PATH, icon: <FileIcon /> },
+  { label: "Settings", href: ACCOUNT_PATH, icon: <SettingsIcon /> },
   { label: "Sign out", href: "/auth/sign-out", icon: <SignOutIcon />, color: "error" },
 ];
+
+/** For platform admins, before signing out. */
+const ADMIN_ITEM: TAccountNavMenuItem = {
+  label: "Admin",
+  href: ADMIN_PATH,
+  icon: <UsersIcon />,
+};
 
 /** Sign in / sign up, or the signed-in user with their account menu. */
 export const AccountNav = () => {
@@ -69,6 +78,11 @@ export const AccountNav = () => {
   }
 
   const { user } = auth;
+  // Only a link: the admin area checks the role on the server.
+  const menuItems =
+    user.role === "USER"
+      ? MENU_ITEMS
+      : [...MENU_ITEMS.slice(0, -1), ADMIN_ITEM, ...MENU_ITEMS.slice(-1)];
   const name = fullName(user);
   return (
     <SAccountNav align="center">
@@ -81,7 +95,7 @@ export const AccountNav = () => {
         <ArrowBottomIcon />
       </SAccountNavTrigger>
       <Menu {...menuProps}>
-        {MENU_ITEMS.map((item) => (
+        {menuItems.map((item) => (
           <MenuItem
             key={item.href}
             color={item.color}

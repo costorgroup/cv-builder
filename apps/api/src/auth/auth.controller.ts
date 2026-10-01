@@ -21,7 +21,7 @@ import {
 } from './auth.dto.js';
 import { AuthGuard } from './auth.guard.js';
 import { AuthService } from './auth.service.js';
-import type { TAuthContext } from './auth.types.js';
+import type { TAuthContext, TSessionClient } from './auth.types.js';
 import {
   clearAuthCookies,
   REFRESH_TOKEN_COOKIE,
@@ -30,6 +30,14 @@ import {
 
 /** Stricter limit for routes that guess passwords or send email. */
 const SENSITIVE = { default: { limit: 5, ttl: 60_000 } };
+
+/** Longest User-Agent kept; some browsers and bots send very long ones. */
+const USER_AGENT_MAX_LENGTH = 512;
+
+const clientOf = (req: Request): TSessionClient => ({
+  userAgent: req.headers["user-agent"]?.slice(0, USER_AGENT_MAX_LENGTH),
+  ipAddress: req.ip,
+});
 
 const refreshTokenOf = (req: Request): string | undefined => {
   const token: unknown = req.cookies?.[REFRESH_TOKEN_COOKIE];
@@ -44,9 +52,13 @@ export class AuthController {
   @Throttle(SENSITIVE)
   async signUp(
     @Body() dto: SignUpDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { user, ...tokens } = await this.authService.signUp(dto);
+    const { user, ...tokens } = await this.authService.signUp(
+      dto,
+      clientOf(req),
+    );
     setAuthCookies(res, tokens);
     return { user };
   }
@@ -56,9 +68,13 @@ export class AuthController {
   @Throttle(SENSITIVE)
   async signIn(
     @Body() dto: SignInDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { user, ...tokens } = await this.authService.signIn(dto);
+    const { user, ...tokens } = await this.authService.signIn(
+      dto,
+      clientOf(req),
+    );
     setAuthCookies(res, tokens);
     return { user };
   }
@@ -72,6 +88,7 @@ export class AuthController {
     try {
       const { user, ...tokens } = await this.authService.refresh(
         refreshTokenOf(req),
+        clientOf(req),
       );
       setAuthCookies(res, tokens);
       return { user };

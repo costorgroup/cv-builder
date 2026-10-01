@@ -1,4 +1,13 @@
 import type { ReactNode } from "react";
+import type { TPublicTemplate } from "@repo/cv-core";
+import type { TPublicPlans } from "@/utils/plans-api";
+
+export type THomePageProps = {
+  /** From the API; null if it couldn't be reached (the plans are left out). */
+  plans: TPublicPlans | null;
+  /** Published templates; null if the API couldn't be reached (all shown). */
+  templates: TPublicTemplate[] | null;
+};
 
 export type THomeFeature = {
   icon: ReactNode;

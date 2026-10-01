@@ -72,9 +72,14 @@ const main = async () => {
     download('cities1000.zip'),
   ]);
 
-  // ISO, ISO3, ISO-Numeric, fips, Country, …
+  // ISO, ISO3, ISO-Numeric, fips, Country, Capital, Area, Population,
+  // Continent, tld, CurrencyCode, …
   const countries = rows(countryFile.toString('utf8'))
-    .map(([code, , , , name]) => ({ code, name }))
+    .map(([code, , , , name, , , , , , currency]) => ({
+      code,
+      name,
+      currency: currency || null,
+    }))
     .filter(({ code, name }) => code && name && !OBSOLETE_COUNTRIES.has(code));
   const countryCodes = new Set(countries.map(({ code }) => code));
 

@@ -4,9 +4,14 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
+import { requestContextMiddleware } from './audit/request-context.js';
+import { setupApiDocs } from './public-api/openapi.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // The raw body is kept for checking payment webhooks' signatures.
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
   app.enableCors({
     origin: process.env.WEB_URL ?? 'http://localhost:3000',
     credentials: true,
@@ -15,6 +20,7 @@ async function bootstrap() {
   // comes from X-Forwarded-For set by that local proxy.
   app.set('trust proxy', 'loopback');
   app.use(cookieParser());
+  app.use(requestContextMiddleware);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -35,6 +41,7 @@ async function bootstrap() {
   );
   // CVs can carry embedded images, which outgrow the default 100kb limit.
   app.useBodyParser('json', { limit: '10mb' });
+  setupApiDocs(app);
   await app.listen(process.env.PORT ?? 3001);
 }
 await bootstrap();

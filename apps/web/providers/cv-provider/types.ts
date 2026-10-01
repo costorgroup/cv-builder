@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { TCvAppearance, TCvData, TCvObjectKey } from "@repo/cv-core";
 import type { TCvCompletion } from "@/providers/cv-provider/completion";
 import type {
   TTemplate,
@@ -6,109 +7,23 @@ import type {
   TTemplateTypography,
 } from "@/templates/types";
 
-export type TCvPersonalInformation = {
-  firstName: string;
-  lastName: string;
-  aboutMe: string;
-  photo: string;
-  email: string;
-  phone: string;
-  /** Location, as picked from the API's country/state/city lists. */
-  country: string;
-  state: string;
-  city: string;
-  zip: string;
-};
-
-export type TCvSocialMedia = {
-  facebook: string;
-  instagram: string;
-  twitter: string;
-  linkedin: string;
-  youtube: string;
-  github: string;
-  website: string;
-};
-
-/** Dates are `YYYY-MM-DD` strings (`YYYY-MM` also works); empty when not set. */
-export type TCvWorkExperience = {
-  id: string;
-  position: string;
-  company: string;
-  location: string;
-  startDate: string;
-  endDate: string;
-  current: boolean;
-  description: string;
-};
-
-export type TCvEducation = {
-  id: string;
-  degree: string;
-  institution: string;
-  location: string;
-  startDate: string;
-  endDate: string;
-  current: boolean;
-  description: string;
-};
-
-/** `level` goes from 1 to `CV_LEVEL_MAX`. */
-export type TCvSkill = {
-  id: string;
-  name: string;
-  level: number;
-};
-
-export type TCvLanguage = {
-  id: string;
-  name: string;
-  level: number;
-};
-
-export type TCvProject = {
-  id: string;
-  name: string;
-  role: string;
-  url: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-};
-
-export type TCvCertificate = {
-  id: string;
-  name: string;
-  issuer: string;
-  date: string;
-  url: string;
-};
-
-/** A hobby or interest, e.g. "Photography". */
-export type TCvInterest = {
-  id: string;
-  name: string;
-};
-
-export type TCvData = {
-  personalInformation: TCvPersonalInformation;
-  socialMedia: TCvSocialMedia;
-  workExperience: TCvWorkExperience[];
-  education: TCvEducation[];
-  skills: TCvSkill[];
-  languages: TCvLanguage[];
-  projects: TCvProject[];
-  certificates: TCvCertificate[];
-  interests: TCvInterest[];
-};
-
-/** Sections that hold a single set of fields. */
-export type TCvObjectKey = "personalInformation" | "socialMedia";
-
-/** Sections that hold a list of entries. */
-export type TCvListKey = Exclude<keyof TCvData, TCvObjectKey>;
-
-export type TCvListItem<K extends TCvListKey> = TCvData[K][number];
+export type {
+  TCvAppearance,
+  TCvCertificate,
+  TCvData,
+  TCvDocument,
+  TCvEducation,
+  TCvInterest,
+  TCvLanguage,
+  TCvListItem,
+  TCvListKey,
+  TCvObjectKey,
+  TCvPersonalInformation,
+  TCvProject,
+  TCvSkill,
+  TCvSocialMedia,
+  TCvWorkExperience,
+} from "@repo/cv-core";
 
 export type TCvContextValue = {
   /**
@@ -129,6 +44,8 @@ export type TCvContextValue = {
   colors: Record<string, string>;
   sizes: TTemplateSizes;
   setSectionSize: (groupId: string, sectionId: string, value: number) => void;
+  /** Puts every section back to the template's default size. */
+  resetSectionSizes: () => void;
   /** Font id from `@/fonts`. */
   fontId: string;
   setFontId: (id: string) => void;
@@ -136,6 +53,13 @@ export type TCvContextValue = {
   fontScale: number;
   setFontScale: (scale: number) => void;
   typography: TTemplateTypography;
+  /** Everything above that's saved with the CV, as one object. */
+  appearance: TCvAppearance;
+  /**
+   * The appearance the CV was opened with (defaults filled in); null for a
+   * new CV. Whatever premium options it already used can be kept.
+   */
+  savedAppearance: TCvAppearance | null;
   /** PDF file name without `.pdf`, as typed; may be empty. */
   fileName: string;
   setFileName: (fileName: string) => void;
@@ -143,25 +67,15 @@ export type TCvContextValue = {
   resolvedFileName: string;
 };
 
-/** How the CV looks: everything picked on the Templates and Appearance steps. */
-export type TCvAppearance = {
-  templateId: string;
-  colorSchemeId: string;
-  sizes: TTemplateSizes;
-  fontId: string;
-  fontScale: number;
-};
-
-/** Everything needed to render a CV somewhere else (e.g. for the PDF). */
-export type TCvDocument = {
-  data: TCvData;
-  appearance: TCvAppearance;
-};
-
 export type TCvProviderProps = {
   children: ReactNode;
   initialData?: TCvData;
   initialAppearance?: Partial<TCvAppearance>;
+  /**
+   * How the CV looks as saved, when editing a saved one: premium options it
+   * already uses stay allowed after a downgrade. Unset for a new CV.
+   */
+  savedAppearance?: Partial<TCvAppearance>;
   /** A saved CV's name; empty means "<first> <last> CV". */
   initialFileName?: string;
 };

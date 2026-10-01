@@ -50,6 +50,9 @@ export const cvsApi = {
       body,
       authenticated: true,
     }),
+  /** A copy of the CV, named "<name> (copy)"; counts toward the plan's limit. */
+  duplicate: (id: string) =>
+    apiRequest<TSavedCv>(`cvs/${id}/duplicate`, { authenticated: true }),
   remove: (id: string) =>
     apiRequest(`cvs/${id}`, { method: "DELETE", authenticated: true }),
 };

@@ -9,6 +9,8 @@ export type TAuthUser = {
   firstName: string;
   lastName: string;
   emailVerified: boolean;
+  /** Platform role; only decides which links to show. */
+  role: "USER" | "ADMIN" | "SUPER_ADMIN";
   createdAt: string;
 };
 

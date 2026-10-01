@@ -14,6 +14,8 @@ export const GUEST_ONLY_ROUTES = [
 /** Only when signed in; others are sent to sign in and back. */
 export const SIGNED_IN_ONLY_ROUTES = [
   "/dashboard",
+  "/admin",
+  "/teams",
   "/auth/change-password",
   "/auth/sign-out",
 ];

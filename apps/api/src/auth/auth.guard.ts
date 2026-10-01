@@ -11,7 +11,8 @@ import { ACCESS_TOKEN_COOKIE } from './utils/cookies.js';
 
 /**
  * Lets a request through only with a valid access token cookie whose session
- * hasn't been revoked, and puts the user on `request.auth`.
+ * hasn't been revoked and whose account isn't disabled, and puts the user
+ * (with their platform role) on `request.auth`.
  */
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -31,13 +32,18 @@ export class AuthGuard implements CanActivate {
     } catch {
       throw new UnauthorizedException();
     }
-    // Checked so signing out or resetting the password takes effect at once,
-    // not when the access token runs out.
-    if (!(await this.authService.sessionExists(payload.sid))) {
-      throw new UnauthorizedException();
-    }
+    // Checked so signing out, resetting the password or disabling the account
+    // takes effect at once, not when the access token runs out.
+    const user = await this.authService.findActiveSessionUser(payload.sid);
+    if (!user || user.id !== payload.sub) throw new UnauthorizedException();
 
-    request.auth = { userId: payload.sub, sessionId: payload.sid };
+    // Not awaited: it's a rare write that the request shouldn't wait on.
+    void this.authService.recordActivity(user);
+    request.auth = {
+      userId: user.id,
+      sessionId: payload.sid,
+      role: user.role,
+    };
     return true;
   }
 }

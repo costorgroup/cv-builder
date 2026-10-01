@@ -2,10 +2,16 @@
 
 import { useId } from "react";
 import { Color, Flex, FormControl, GridCell, Range } from "@costor/ui";
+import { CV_FONT_SCALE, defaultFontIdOf } from "@repo/cv-core";
+import LockedFeaturesNotice from "@/components/locked-features-notice";
 import { cvFonts } from "@/fonts";
 import { useCv } from "@/providers/cv-provider/context";
+import { useEntitlements } from "@/providers/entitlements-provider";
 import {
+  SAppearancePageBadge,
   SAppearancePageFont,
+  SAppearancePageFontBadge,
+  SAppearancePageSwatch,
   SAppearancePageGrid,
   SAppearancePageOptions,
 } from "@/views/appearance-page/styles";
@@ -21,12 +27,17 @@ const AppearancePage = ({ ...props }: TAppearancePageProps) => {
     fontScale,
     setFontScale,
   } = useCv();
+  const { can } = useEntitlements();
+  const schemesLocked = !can("appearance.allColorSchemes");
+  const fontsLocked = !can("appearance.allFonts");
+  const defaultFontId = defaultFontIdOf(template);
   // FormControl labels itself with `${id}-label`; the groups reuse that.
   const accentColorGroupId = useId();
   const fontGroupId = useId();
 
   return (
     <Flex direction="column" gap={5} {...props}>
+      <LockedFeaturesNotice />
       <FormControl id={accentColorGroupId} label="Accent Color" size="sm">
         <SAppearancePageOptions
           role="group"
@@ -35,15 +46,17 @@ const AppearancePage = ({ ...props }: TAppearancePageProps) => {
           gap={2}
           wrap="wrap"
         >
-          {template.colorSchemes.map((scheme) => (
-            <Color
-              key={scheme.id}
-              title={scheme.name}
-              aria-label={scheme.name}
-              colors={Object.values(scheme.colors)}
-              selected={scheme.id === colorSchemeId}
-              onClick={() => setColorSchemeId(scheme.id)}
-            />
+          {template.colorSchemes.map((scheme, index) => (
+            <SAppearancePageSwatch key={scheme.id}>
+              <Color
+                title={scheme.name}
+                aria-label={scheme.name}
+                colors={Object.values(scheme.colors)}
+                selected={scheme.id === colorSchemeId}
+                onClick={() => setColorSchemeId(scheme.id)}
+              />
+              {schemesLocked && index > 0 && <SAppearancePageBadge iconOnly />}
+            </SAppearancePageSwatch>
           ))}
         </SAppearancePageOptions>
       </FormControl>
@@ -65,6 +78,9 @@ const AppearancePage = ({ ...props }: TAppearancePageProps) => {
               >
                 <strong>Aa</strong>
                 <span>{font.name}</span>
+                {fontsLocked && font.id !== defaultFontId && (
+                  <SAppearancePageFontBadge iconOnly />
+                )}
               </SAppearancePageFont>
             </GridCell>
           ))}
@@ -74,8 +90,8 @@ const AppearancePage = ({ ...props }: TAppearancePageProps) => {
         label="Text Size"
         size="sm"
         color="primary"
-        min={80}
-        max={120}
+        min={CV_FONT_SCALE.min * 100}
+        max={CV_FONT_SCALE.max * 100}
         step={5}
         value={Math.round(fontScale * 100)}
         renderValue={({ value }) => `${value}%`}
