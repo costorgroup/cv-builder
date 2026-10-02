@@ -6,6 +6,7 @@ import { UsageModule } from '../usage/usage.module.js';
 import { AdminActivityService } from './admin-activity.service.js';
 import { AdminBillingController } from './admin-billing.controller.js';
 import { AdminBillingService } from './admin-billing.service.js';
+import { AdminEmbedsController } from './admin-embeds.controller.js';
 import { AdminTemplatesController } from './admin-templates.controller.js';
 import { AdminTemplatesService } from './admin-templates.service.js';
 import { AdminStatsService } from './admin-stats.service.js';
@@ -18,6 +19,7 @@ import { AdminController } from './admin.controller.js';
     AdminController,
     AdminBillingController,
     AdminTemplatesController,
+    AdminEmbedsController,
   ],
   providers: [
     AdminStatsService,

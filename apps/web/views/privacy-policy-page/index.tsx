@@ -23,8 +23,8 @@ const SECTIONS: TLegalSection[] = [
       <ul>
         <li>
           <strong>Account details</strong>: your first and last name, email
-          address and a securely hashed version of your password. We never
-          store your password itself.
+          address and a securely hashed version of your password. We never store
+          your password itself.
         </li>
         <li>
           <strong>CV content</strong>: everything you enter in the editor, such
@@ -67,8 +67,8 @@ const SECTIONS: TLegalSection[] = [
       <p>
         We process your data to provide the Service you signed up for
         (performance of a contract), and to keep it secure (our legitimate
-        interest). Where we need your consent for something, we&apos;ll ask
-        for it first and you can withdraw it at any time.
+        interest). Where we need your consent for something, we&apos;ll ask for
+        it first and you can withdraw it at any time.
       </p>
     ),
   },
@@ -84,8 +84,8 @@ const SECTIONS: TLegalSection[] = [
         </p>
         <p>
           We only share data with providers that help us run the Service (such
-          as hosting), under contracts that protect it, or when the law
-          requires it. See{" "}
+          as hosting), under contracts that protect it, or when the law requires
+          it. See{" "}
           <NextLink href="/third-party-tools">third-party tools</NextLink> for
           the full list.
         </p>

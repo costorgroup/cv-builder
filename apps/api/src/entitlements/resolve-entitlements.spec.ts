@@ -13,6 +13,7 @@ import {
 const NOW = new Date('2026-09-30T12:00:00Z');
 const PAST = new Date('2026-09-01T00:00:00Z');
 const FUTURE = new Date('2026-10-30T00:00:00Z');
+const DAY = 24 * 60 * 60 * 1000;
 
 const FREE: TPlanRecord = {
   key: 'free',
@@ -50,6 +51,22 @@ describe('resolveEntitlements', () => {
         'past due (payment being retried)',
         subscription({ status: 'PAST_DUE' }),
         'premium',
+      ],
+      [
+        'past due, retries still within the grace period',
+        subscription({
+          status: 'PAST_DUE',
+          currentPeriodEnd: new Date(NOW.getTime() - 7 * DAY),
+        }),
+        'premium',
+      ],
+      [
+        'past due long after the period ended',
+        subscription({
+          status: 'PAST_DUE',
+          currentPeriodEnd: new Date(NOW.getTime() - 15 * DAY),
+        }),
+        'free',
       ],
       [
         'trialing',

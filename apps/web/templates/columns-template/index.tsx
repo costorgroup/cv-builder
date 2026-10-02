@@ -25,6 +25,8 @@ import {
   TemplatePhotoContent,
   useTemplateContent,
   type TTemplateEntry,
+  cvStep,
+  type TTemplateStep,
 } from "@/templates/shared";
 import { columnsTemplateSpec } from "@repo/cv-core";
 import type { TTemplate } from "@/templates/types";
@@ -51,9 +53,14 @@ const ColumnsTemplateCv = ({
     interests,
   } = useTemplateContent();
 
-  const renderSection = (title: string, show: boolean, children: ReactNode) =>
+  const renderSection = (
+    step: TTemplateStep,
+    title: string,
+    show: boolean,
+    children: ReactNode,
+  ) =>
     show && (
-      <SColumnsTemplateSection>
+      <SColumnsTemplateSection {...cvStep(step)}>
         <SColumnsTemplateHeading cvColors={colors}>
           {title}
         </SColumnsTemplateHeading>
@@ -61,8 +68,13 @@ const ColumnsTemplateCv = ({
       </SColumnsTemplateSection>
     );
 
-  const renderList = (title: string, entries: TTemplateEntry[]) =>
+  const renderList = (
+    step: TTemplateStep,
+    title: string,
+    entries: TTemplateEntry[],
+  ) =>
     renderSection(
+      step,
       title,
       entries.length > 0,
       <SColumnsTemplateList>
@@ -78,14 +90,21 @@ const ColumnsTemplateCv = ({
   return (
     <SColumnsTemplate cvColors={colors} typography={typography}>
       <SColumnsTemplateHeader cvColors={colors}>
-        <SColumnsTemplatePhoto cvColors={colors}>
+        <SColumnsTemplatePhoto
+          {...cvStep("personal-information")}
+          cvColors={colors}
+        >
           <TemplatePhotoContent
             photo={photo}
             initials={initials}
             alt={fullName}
           />
         </SColumnsTemplatePhoto>
-        {fullName && <SColumnsTemplateName>{fullName}</SColumnsTemplateName>}
+        {fullName && (
+          <SColumnsTemplateName {...cvStep("personal-information")}>
+            {fullName}
+          </SColumnsTemplateName>
+        )}
       </SColumnsTemplateHeader>
       <SColumnsTemplateColumns>
         <SColumnsTemplateColumn
@@ -93,11 +112,13 @@ const ColumnsTemplateCv = ({
           basis={getSectionSize(sizes, "columns", "profile", 38)}
         >
           {renderSection(
+            "personal-information",
             "Profile",
             Boolean(aboutMe),
             <SColumnsTemplateParagraph>{aboutMe}</SColumnsTemplateParagraph>,
           )}
           {renderSection(
+            "work-experience",
             "Experience",
             experience.length > 0,
             <TemplateEntries items={experience} />,
@@ -108,16 +129,19 @@ const ColumnsTemplateCv = ({
           basis={getSectionSize(sizes, "columns", "contact", 32)}
         >
           {renderSection(
+            "education",
             "Education",
             education.length > 0,
             <TemplateEntries items={education} />,
           )}
           {renderSection(
+            "projects",
             "Projects",
             projects.length > 0,
             <TemplateEntries items={projects} />,
           )}
           {renderSection(
+            "certificates",
             "Certificates",
             certificates.length > 0,
             <TemplateEntries items={certificates} />,
@@ -127,8 +151,9 @@ const ColumnsTemplateCv = ({
           cvColors={colors}
           basis={getSectionSize(sizes, "columns", "links", 30)}
         >
-          {renderList("Contact", contact)}
+          {renderList("personal-information", "Contact", contact)}
           {renderSection(
+            "skills",
             "Skills",
             skills.length > 0,
             <TemplateChips
@@ -138,6 +163,7 @@ const ColumnsTemplateCv = ({
             />,
           )}
           {renderSection(
+            "languages",
             "Languages",
             languages.length > 0,
             <TemplateLevels
@@ -148,6 +174,7 @@ const ColumnsTemplateCv = ({
             />,
           )}
           {renderSection(
+            "interests",
             "Interests",
             interests.length > 0,
             <TemplateChips
@@ -156,7 +183,7 @@ const ColumnsTemplateCv = ({
               color={colors.text}
             />,
           )}
-          {renderList("Links", socials)}
+          {renderList("social-media", "Links", socials)}
         </SColumnsTemplateColumn>
       </SColumnsTemplateColumns>
     </SColumnsTemplate>

@@ -16,14 +16,18 @@ export type TCvEditorEnv = {
   editorPath?: (cvId?: string) => string;
   /** Steps shown, in order. */
   steps?: readonly TCvEditorStep[];
-  /** In place of our logo at the top of the steps. */
+  /** A logo at the top of the steps (e.g. an embed's own). */
   brand?: ReactNode;
-  /** Whether the light/dark switch shows. */
-  themeToggle?: boolean;
+  /** Whether the app's top bar shows; its account menu needs a signed-in user. */
+  topNav?: boolean;
+  /** Where the back button by the step's title leads; My CVs otherwise. */
+  exitPath?: string;
   save?: (
     cvId: string | undefined,
     body: Pick<TSavedCv, "name" | "data" | "appearance">,
   ) => Promise<TSavedCv>;
+  /** Stores a photo and returns its link; the app's own upload otherwise. */
+  uploadPhoto?: (file: Blob) => Promise<{ url: string }>;
   /** Fetches the PDF; the editor saves it as a file. */
   fetchPdf?: (source: TCvPdfSource) => Promise<Blob>;
   /** Whether PDFs can be downloaded at all. */

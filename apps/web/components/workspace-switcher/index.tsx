@@ -1,11 +1,11 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { NativeSelect } from "@costor/ui";
 import { SWorkspaceSwitcher } from "@/components/workspace-switcher/styles";
 import { useTeams } from "@/providers/teams-provider";
 import { DASHBOARD_PATH } from "@/utils/dashboard-path";
 import { teamPath } from "@/utils/team-path";
+import ValueSelect from "@/components/value-select";
 
 /** The slug of the team whose pages are open, if any. */
 const slugIn = (pathname: string) => /^\/teams\/([^/]+)/.exec(pathname)?.[1];
@@ -24,7 +24,7 @@ export const WorkspaceSwitcher = () => {
 
   return (
     <SWorkspaceSwitcher>
-      <NativeSelect
+      <ValueSelect
         aria-label="Switch between your account and your teams"
         size="sm"
         variant="subtle"

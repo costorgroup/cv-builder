@@ -19,6 +19,12 @@ import {
 } from './embed-config.js';
 import { EMBED_SESSION_TTL_SECONDS, EmbedTokens } from './embed-token.js';
 
+/**
+ * The external id of the one user per organization that owners preview their
+ * embeds as. Customers can't use it, and it doesn't count toward the plan.
+ */
+export const PREVIEW_EXTERNAL_ID = 'cvb-preview';
+
 /** How long a launch token can wait to be exchanged. */
 export const LAUNCH_TOKEN_TTL_MS = 60_000;
 
@@ -154,10 +160,12 @@ export class EmbedsService {
         },
       },
     });
-    if (!existing) {
+    if (!existing && input.externalUserId !== PREVIEW_EXTERNAL_ID) {
       entitlements.assertAllowsAnother(
         'embed.externalUsers.max',
-        await this.prisma.externalUser.count({ where: { organizationId } }),
+        await this.prisma.externalUser.count({
+          where: { organizationId, externalId: { not: PREVIEW_EXTERNAL_ID } },
+        }),
       );
     }
     const externalUser = await this.prisma.externalUser.upsert({
@@ -197,6 +205,19 @@ export class EmbedsService {
         externalId: externalUser.externalId,
       },
     };
+  }
+
+  /**
+   * For an owner trying their own embed: a launch token as the preview
+   * user. Their preview CVs stay separate from real users'.
+   */
+  async preview(organizationId: string, id: string) {
+    const config = await this.owned(organizationId, id);
+    return this.launch(organizationId, {
+      publicKey: config.publicKey,
+      externalUserId: PREVIEW_EXTERNAL_ID,
+      name: 'Preview',
+    });
   }
 
   /**

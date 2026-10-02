@@ -42,8 +42,8 @@ export class AdminBillingService {
     pageSize,
   }: ListSubscriptionsQuery) {
     const where: Prisma.SubscriptionWhereInput = {
-      ...(status && { status }),
-      ...(planKey && { plan: { key: planKey } }),
+      ...(status?.length && { status: { in: status } }),
+      ...(planKey?.length && { plan: { key: { in: planKey } } }),
       ...(paid && { provider: { not: 'none' } }),
     };
     const [items, total] = await this.prisma.$transaction([

@@ -8,7 +8,6 @@ import {
   Chip,
   DataTable,
   Flex,
-  NativeSelect,
   Skeleton,
   Small,
   Strong,
@@ -34,6 +33,7 @@ import {
   SApiKeysPageField,
   SApiKeysPageScopes,
 } from "@/views/api-keys-page/styles";
+import ValueSelect from "@/components/value-select";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -336,7 +336,7 @@ const ApiKeysPage = () => {
               />
             </SApiKeysPageField>
             <SApiKeysPageField width={160}>
-              <NativeSelect
+              <ValueSelect
                 label="Expires"
                 size="sm"
                 variant="subtle"
@@ -403,7 +403,7 @@ const ApiKeysPage = () => {
           /v1/cvs/:id/pdf · GET /v1/templates · GET /v1/usage. Each key can make
           up to 120 requests a minute; the plan sets how many a month.
           {team &&
-            " Team keys can list templates and usage for now; managing CVs comes with embedded users."}
+            " Team keys work with the CVs of the team's embedded users: add ?externalUserId=<your id for them> to the CV endpoints."}
         </Small>
       </SettingsCard>
     </Flex>

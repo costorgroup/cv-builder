@@ -45,3 +45,5 @@ export { default as InvitePage } from "@/views/invite-page";
 export { default as ApiKeysPage } from "@/views/api-keys-page";
 export { default as EmbedHomePage } from "@/views/embed-home-page";
 export { default as EmbedsPage } from "@/views/embeds-page";
+export { default as StoragePage } from "@/views/storage-page";
+export { default as AdminEmbedsPage } from "@/views/admin-embeds-page";

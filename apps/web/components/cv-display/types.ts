@@ -1,4 +1,5 @@
 import type { HTMLAttributes } from "react";
+import type { TTemplateStep } from "@/templates/shared";
 
 export type TCvDisplayVariant = "preview" | "static" | "print";
 
@@ -13,10 +14,20 @@ export type TCvDisplayProps = HTMLAttributes<HTMLDivElement> & {
   onReady?: (pages: number) => void;
   /** Shows only this page (0-based) instead of all of them. */
   page?: number;
+  /**
+   * Called with the editor step of a part of the CV that's clicked. When set,
+   * hovering a part of the CV outlines it.
+   */
+  onStepSelect?: (step: TTemplateStep) => void;
 };
 
 export type TSCvDisplayVariantProps = {
   variant: TCvDisplayVariant;
+};
+
+export type TSCvDisplayPageProps = TSCvDisplayVariantProps & {
+  /** Outlines the hovered part of the CV, to be clicked. */
+  selectable: boolean;
 };
 
 export type TSCvDisplayDocumentProps = {

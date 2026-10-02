@@ -25,7 +25,7 @@ export class AdminActivityService {
     pageSize,
   }: ListAuditLogsQuery) {
     const where: Prisma.AuditLogWhereInput = {
-      ...(action && { action }),
+      ...(action?.length && { action: { in: action } }),
       ...(actorId && { actorId }),
       ...(resourceType && { resourceType }),
       ...(resourceId && { resourceId }),

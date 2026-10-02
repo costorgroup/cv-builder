@@ -6,7 +6,6 @@ import {
   Chip,
   DataTable,
   Flex,
-  NativeSelect,
   Skeleton,
   Small,
   Strong,
@@ -20,12 +19,11 @@ import {
 } from "@/utils/admin-api";
 import { adminUserPath } from "@/utils/admin-path";
 import { ApiError } from "@/utils/api-client";
+import TableFilters, {
+  TableFilterMultiSelect,
+} from "@/components/table-filters";
 import WideTable from "@/components/wide-table";
-import {
-  SAdminUsersPageFilters,
-  SAdminUsersPageLink,
-  SAdminUsersPageSelect,
-} from "@/views/admin-users-page/styles";
+import { SAdminUsersPageLink } from "@/views/admin-users-page/styles";
 
 /** How long typing pauses before the search reaches the server. */
 const SEARCH_DELAY_MS = 300;
@@ -37,11 +35,27 @@ const shortDate = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 const dateOrNever = (iso: string | null) =>
   iso ? shortDate.format(new Date(iso)) : "Never";
 
+/** No filtering: every status and role. */
+const NO_FILTERS: { status: string[]; role: string[] } = {
+  status: [],
+  role: [],
+};
+
+const STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "disabled", label: "Disabled" },
+];
+
 const ROLE_LABELS = {
   USER: "User",
   ADMIN: "Admin",
   SUPER_ADMIN: "Super admin",
 };
+
+const ROLE_OPTIONS = Object.entries(ROLE_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 /**
  * A user as the table shows it. The table searches the text of each column,
@@ -168,10 +182,42 @@ const AdminUsersPage = () => {
     return () => controller.abort();
   }, [query]);
 
-  const filter = (change: Pick<TAdminUserQuery, "status" | "role">) => {
-    setQuery((current) => ({ ...current, ...change }));
+  const filter = ({ status, role }: typeof NO_FILTERS) => {
+    setQuery((current) => ({
+      ...current,
+      status: status as TAdminUserQuery["status"],
+      role: role as TAdminUserQuery["role"],
+    }));
     setPage(1);
   };
+
+  const filters = (
+    <TableFilters
+      value={{ status: query.status ?? [], role: query.role ?? [] }}
+      defaultValue={NO_FILTERS}
+      onChange={filter}
+      description="Show only the accounts with these statuses and roles. Pick none to see all."
+    >
+      {(draft, update) => (
+        <>
+          <TableFilterMultiSelect
+            label="Status"
+            placeholder="Any status"
+            value={draft.status}
+            options={STATUS_OPTIONS}
+            onChange={(status) => update({ status })}
+          />
+          <TableFilterMultiSelect
+            label="Role"
+            placeholder="Any role"
+            value={draft.role}
+            options={ROLE_OPTIONS}
+            onChange={(role) => update({ role })}
+          />
+        </>
+      )}
+    </TableFilters>
+  );
 
   const renderTable = () => {
     if (!result) {
@@ -194,6 +240,7 @@ const AdminUsersPage = () => {
           pageSize={PAGE_SIZE}
           title="Users"
           description="Every account, newest first, with its plan and status."
+          actions={filters}
           searchPlaceholder="Search by email or name"
           search={search}
           onSearchChange={setSearch}
@@ -206,45 +253,6 @@ const AdminUsersPage = () => {
 
   return (
     <Flex direction="column" gap={4}>
-      <SAdminUsersPageFilters gap={3} wrap="wrap" align="center">
-        <SAdminUsersPageSelect>
-          <NativeSelect
-            aria-label="Status"
-            size="sm"
-            variant="subtle"
-            value={query.status ?? ""}
-            options={[
-              { value: "", label: "Any status" },
-              { value: "active", label: "Active" },
-              { value: "disabled", label: "Disabled" },
-            ]}
-            onChange={(_, value) =>
-              filter({
-                status: (value || undefined) as TAdminUserQuery["status"],
-              })
-            }
-          />
-        </SAdminUsersPageSelect>
-        <SAdminUsersPageSelect>
-          <NativeSelect
-            aria-label="Role"
-            size="sm"
-            variant="subtle"
-            value={query.role ?? ""}
-            options={[
-              { value: "", label: "Any role" },
-              ...Object.entries(ROLE_LABELS).map(([value, label]) => ({
-                value,
-                label,
-              })),
-            ]}
-            onChange={(_, value) =>
-              filter({ role: (value || undefined) as TAdminUserQuery["role"] })
-            }
-          />
-        </SAdminUsersPageSelect>
-      </SAdminUsersPageFilters>
-
       {result && !("error" in result) && result.total > result.items.length && (
         <Small color="secondary">
           Only the newest {result.items.length} matches are loaded. Search or

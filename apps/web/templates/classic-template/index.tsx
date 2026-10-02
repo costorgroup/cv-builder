@@ -21,6 +21,8 @@ import {
   TemplateInlineList,
   TemplateLevels,
   useTemplateContent,
+  cvStep,
+  type TTemplateStep,
 } from "@/templates/shared";
 import { classicTemplateSpec } from "@repo/cv-core";
 import type { TTemplate } from "@/templates/types";
@@ -45,9 +47,14 @@ const ClassicTemplateCv = ({
     interests,
   } = useTemplateContent();
 
-  const renderSection = (title: string, show: boolean, children: ReactNode) =>
+  const renderSection = (
+    step: TTemplateStep,
+    title: string,
+    show: boolean,
+    children: ReactNode,
+  ) =>
     show && (
-      <SClassicTemplateSection>
+      <SClassicTemplateSection {...cvStep(step)}>
         <SClassicTemplateHeading cvColors={colors}>
           {title}
         </SClassicTemplateHeading>
@@ -61,9 +68,16 @@ const ClassicTemplateCv = ({
         cvColors={colors}
         basis={getSectionSize(sizes, "rows", "header", 24)}
       >
-        {fullName && <SClassicTemplateName>{fullName}</SClassicTemplateName>}
+        {fullName && (
+          <SClassicTemplateName {...cvStep("personal-information")}>
+            {fullName}
+          </SClassicTemplateName>
+        )}
         {contact.length > 0 && (
-          <SClassicTemplateContact cvColors={colors}>
+          <SClassicTemplateContact
+            {...cvStep("personal-information")}
+            cvColors={colors}
+          >
             {contact.map(({ label, value }) => (
               <span key={label}>{value}</span>
             ))}
@@ -75,36 +89,43 @@ const ClassicTemplateCv = ({
         basis={getSectionSize(sizes, "rows", "body", 76)}
       >
         {renderSection(
+          "personal-information",
           "Profile",
           Boolean(aboutMe),
           <SClassicTemplateParagraph>{aboutMe}</SClassicTemplateParagraph>,
         )}
         {renderSection(
+          "work-experience",
           "Experience",
           experience.length > 0,
           <TemplateEntries items={experience} />,
         )}
         {renderSection(
+          "education",
           "Education",
           education.length > 0,
           <TemplateEntries items={education} />,
         )}
         {renderSection(
+          "projects",
           "Projects",
           projects.length > 0,
           <TemplateEntries items={projects} />,
         )}
         {renderSection(
+          "certificates",
           "Certificates",
           certificates.length > 0,
           <TemplateEntries items={certificates} />,
         )}
         {renderSection(
+          "skills",
           "Skills",
           skills.length > 0,
           <TemplateInlineList items={skills} separator=" · " />,
         )}
         {renderSection(
+          "languages",
           "Languages",
           languages.length > 0,
           <TemplateLevels
@@ -115,11 +136,13 @@ const ClassicTemplateCv = ({
           />,
         )}
         {renderSection(
+          "interests",
           "Interests",
           interests.length > 0,
           <TemplateInlineList items={interests} separator=" · " />,
         )}
         {renderSection(
+          "social-media",
           "Social Media",
           socials.length > 0,
           <SClassicTemplateList>

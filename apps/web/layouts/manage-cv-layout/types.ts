@@ -21,4 +21,3 @@ export type TManageCvLayoutNavItem = {
   icon: React.ReactNode;
   count?: number;
 };
-

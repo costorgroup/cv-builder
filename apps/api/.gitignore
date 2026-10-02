@@ -6,3 +6,6 @@ node_modules
 
 # GeoNames files downloaded by the seeder
 /prisma/.geonames
+
+# Uploaded files in development (the platform storage)
+/storage

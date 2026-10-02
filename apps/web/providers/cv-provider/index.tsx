@@ -122,7 +122,13 @@ export const CvProvider = ({
   );
 
   const appearance = useMemo<TCvAppearance>(
-    () => ({ templateId: template.id, colorSchemeId, sizes, fontId, fontScale }),
+    () => ({
+      templateId: template.id,
+      colorSchemeId,
+      sizes,
+      fontId,
+      fontScale,
+    }),
     [template, colorSchemeId, sizes, fontId, fontScale],
   );
 

@@ -2,6 +2,8 @@
 
 import { Alert, Button } from "@costor/ui";
 import ButtonLink from "@/components/button-link";
+import { SUpgradePromptIcon } from "@/components/upgrade-prompt/styles";
+import { LockIcon } from "@/layouts/dashboard-layout/icons";
 import { useCvEditorEnv } from "@/providers/cv-editor-env";
 import type { TUpgradePromptProps } from "@/components/upgrade-prompt/types";
 import { planRestrictionText } from "@/utils/plan-restriction";
@@ -16,6 +18,7 @@ export const UpgradePrompt = ({
   action,
   href = PRICING_PATH,
   className,
+  wide = false,
 }: TUpgradePromptProps) => {
   const { title, description } = planRestrictionText(restriction);
   // In an embed, the person can't upgrade: there's nowhere to send them.
@@ -27,6 +30,15 @@ export const UpgradePrompt = ({
       variant="subtle"
       size="sm"
       title={title}
+      icon={
+        wide ? (
+          <SUpgradePromptIcon>
+            <LockIcon />
+          </SUpgradePromptIcon>
+        ) : undefined
+      }
+      iconAlign={wide ? "center" : undefined}
+      actionsPlacement={wide ? "end" : undefined}
       actions={
         <>
           {action}

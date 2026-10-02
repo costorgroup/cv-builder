@@ -14,6 +14,7 @@ import {
   TeamsService,
 } from '../organizations/teams.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AssetsService } from '../storage/assets.service.js';
 import { organizationOverview } from '../usage/organization-overview.js';
 import { UsageService } from '../usage/usage.service.js';
 import type { UpdateProfileDto } from './account.dto.js';
@@ -26,6 +27,7 @@ export class AccountService {
     private readonly usage: UsageService,
     private readonly audit: AuditService,
     private readonly teams: TeamsService,
+    private readonly assets: AssetsService,
   ) {}
 
   /** The user's plan, subscription and usage, for their dashboard. */
@@ -125,7 +127,7 @@ export class AccountService {
     if (!(await verifyPassword(password, user.passwordHash))) {
       throw new BadRequestException('Password is incorrect');
     }
-    await this.prisma.$transaction(async (tx) => {
+    const organizationIds = await this.prisma.$transaction(async (tx) => {
       const personal = await tx.subscription.findFirst({
         where: { organization: { personalOwnerId: userId } },
       });
@@ -138,12 +140,22 @@ export class AccountService {
       const teamIds = await this.teams.teamsToDeleteWithUser(tx, userId);
       await tx.organization.deleteMany({ where: { id: { in: teamIds } } });
       await tx.user.delete({ where: { id: userId } });
+      return personal ? [personal.organizationId, ...teamIds] : teamIds;
     });
-    // Kept after the account is gone, without the person's details.
+    // Their files go too, once nothing in the database points to them.
+    for (const id of organizationIds) {
+      await this.assets.removeForOrganization(id);
+    }
+    // Kept after the account is gone, without the person's details: the
+    // entries keep the (now meaningless) id, but not where they acted from.
     await this.audit.record({
       actor: { type: 'USER', id: userId },
       action: 'ACCOUNT_DELETED',
       resource: { type: 'user', id: userId },
+    });
+    await this.prisma.auditLog.updateMany({
+      where: { actorType: 'USER', actorId: userId },
+      data: { ipAddress: null, userAgent: null },
     });
   }
 }

@@ -25,9 +25,16 @@ export type TSubscriptionRecord = Pick<
 export type TOnInvalidEntitlement = (message: string) => void;
 
 /**
+ * How long a past-due plan keeps working after its period ended, while the
+ * payment provider retries. Normally the provider cancels it sooner; this
+ * stops it lasting forever if that never reaches us.
+ */
+export const PAST_DUE_GRACE_MS = 14 * 24 * 60 * 60 * 1000;
+
+/**
  * Whether the subscription's plan applies right now. Canceled plans last to
  * the end of the paid period; past-due ones keep working while the payment
- * provider retries.
+ * provider retries, up to the grace period.
  */
 export const isSubscriptionEffective = (
   {
@@ -39,8 +46,12 @@ export const isSubscriptionEffective = (
 ) => {
   switch (status) {
     case SubscriptionStatus.ACTIVE:
-    case SubscriptionStatus.PAST_DUE:
       return true;
+    case SubscriptionStatus.PAST_DUE:
+      return (
+        !currentPeriodEnd ||
+        currentPeriodEnd.getTime() + PAST_DUE_GRACE_MS > now.getTime()
+      );
     case SubscriptionStatus.TRIALING:
       return !trialEndsAt || trialEndsAt > now;
     case SubscriptionStatus.CANCELED:

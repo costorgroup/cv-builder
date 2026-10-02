@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { PlanFeatureRequiredException } from '../entitlements/entitlements.errors.js';
 import type { EntitlementService } from '../entitlements/entitlements.service.js';
 import { resolveEntitlements } from '../entitlements/resolve-entitlements.js';
+import type { ThrottlerStorage } from '@nestjs/throttler';
 import type { UsageService } from '../usage/usage.service.js';
 import {
   apiKeyHashOf,
@@ -17,7 +18,6 @@ import {
 } from './api-key-format.js';
 import { ApiKeyGuard, type TApiRequest } from './api-key.guard.js';
 import type { ApiKeysService, TApiPrincipal } from './api-keys.service.js';
-import { RateLimiter } from './rate-limiter.js';
 
 describe('API key format', () => {
   it('makes keys that parse back to the stored hash', () => {
@@ -36,17 +36,6 @@ describe('API key format', () => {
     expect(bearerTokenOf('bearer   abc')).toBe('abc');
     expect(bearerTokenOf('Basic abc')).toBeUndefined();
     expect(bearerTokenOf(undefined)).toBeUndefined();
-  });
-});
-
-describe('RateLimiter', () => {
-  it('allows up to the limit per window, then says how long to wait', () => {
-    const limiter = new RateLimiter(2, 60_000);
-    expect(limiter.hit('k', 0)).toBe(0);
-    expect(limiter.hit('k', 1_000)).toBe(0);
-    expect(limiter.hit('k', 15_000)).toBe(45);
-    expect(limiter.hit('other', 15_000)).toBe(0);
-    expect(limiter.hit('k', 60_000)).toBe(0);
   });
 });
 
@@ -72,6 +61,7 @@ const setup = ({
   entitlements = plan(['api.access'], { 'api.requests.monthly': 100 }),
   used = 0,
   authorization = 'Bearer cvb_live_00000000_x',
+  blocked = false,
 } = {}) => {
   const record = vi.fn();
   const guard = new ApiKeyGuard(
@@ -86,6 +76,14 @@ const setup = ({
       countThisMonth: vi.fn().mockResolvedValue(used),
       record,
     } as unknown as UsageService,
+    {
+      increment: vi.fn().mockResolvedValue({
+        totalHits: blocked ? 121 : 1,
+        timeToExpire: 42,
+        isBlocked: blocked,
+        timeToBlockExpire: blocked ? 42 : 0,
+      }),
+    } as unknown as ThrottlerStorage,
   );
   const request = { headers: { authorization } } as unknown as TApiRequest;
   const context = {
@@ -138,6 +136,13 @@ describe('ApiKeyGuard', () => {
       code: 'PLAN_LIMIT_REACHED',
       limit: 'api.requests.monthly',
     });
+  });
+
+  it('429s over the per-minute limit, saying when to retry', async () => {
+    const { guard, context, record } = setup({ blocked: true });
+    const error = await guard.canActivate(context).catch((e: unknown) => e);
+    expect((error as HttpException).getStatus()).toBe(429);
+    expect(record).not.toHaveBeenCalled();
   });
 
   it('counts the request and puts the key on it', async () => {

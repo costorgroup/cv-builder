@@ -62,6 +62,10 @@ const FEATURE_TEXT: Partial<Record<TFeature, [string, string]>> = {
     "Your own branding",
     'Hiding "Made with CV Builder" needs a plan with white-label embeds.',
   ],
+  "storage.external": [
+    "Your own storage",
+    "Keeping files in your own bucket needs a plan with external storage.",
+  ],
   "api.access": [
     "API access",
     "This plan doesn't include the API. Upgrade to make API keys and connect your own apps.",

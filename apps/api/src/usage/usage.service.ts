@@ -78,10 +78,19 @@ export class UsageService {
     entitlements: Entitlements,
     now = new Date(),
   ): Promise<{ cvs: TUsage; storageBytes: TUsage; pdfsThisMonth: TUsage }> {
-    const [cvs, pdfs] = await this.prisma.$transaction([
+    const [cvs, allCvs, assets, pdfs] = await this.prisma.$transaction([
+      // The account's own CVs; embedded users' have their own limit.
+      this.prisma.cv.aggregate({
+        where: { organizationId, externalUserId: null },
+        _count: true,
+      }),
+      // Storage is everything the organization keeps with us.
       this.prisma.cv.aggregate({
         where: { organizationId },
-        _count: true,
+        _sum: { sizeBytes: true },
+      }),
+      this.prisma.asset.aggregate({
+        where: { organizationId, storage: 'PLATFORM' },
         _sum: { sizeBytes: true },
       }),
       this.prisma.usageCounter.findUnique({
@@ -98,7 +107,7 @@ export class UsageService {
     return {
       cvs: { used: cvs._count, max: entitlements.limit('cv.max') },
       storageBytes: {
-        used: cvs._sum.sizeBytes ?? 0,
+        used: (allCvs._sum.sizeBytes ?? 0) + (assets._sum.sizeBytes ?? 0),
         max: entitlements.limit('storage.bytes'),
       },
       pdfsThisMonth: {

@@ -91,8 +91,10 @@ export type TAdminUserDetail = Omit<TAdminUser, "cvCount" | "subscription"> & {
 
 export type TAdminUserQuery = {
   search?: string;
-  status?: "active" | "disabled";
-  role?: TPlatformRole;
+  /** Any of these; everyone when empty. */
+  status?: ("active" | "disabled")[];
+  /** Any of these; everyone when empty. */
+  role?: TPlatformRole[];
   page?: number;
   /** Up to 500. */
   pageSize?: number;
@@ -104,17 +106,8 @@ export const adminApi = {
       method: "GET",
       authenticated: true,
     }),
-  users: (query: TAdminUserQuery, signal?: AbortSignal) => {
-    const params = new URLSearchParams();
-    for (const [key, value] of Object.entries(query)) {
-      if (value !== undefined && value !== "") params.set(key, String(value));
-    }
-    return apiRequest<TAdminUserList>(`admin/users?${params}`, {
-      method: "GET",
-      authenticated: true,
-      signal,
-    });
-  },
+  users: (query: TAdminUserQuery, signal?: AbortSignal) =>
+    get<TAdminUserList>(`admin/users?${queryString(query)}`, signal),
   user: (id: string) =>
     apiRequest<TAdminUserDetail>(`admin/users/${id}`, {
       method: "GET",
@@ -205,12 +198,17 @@ export type TAuditLogPage = {
   pageCount: number;
 };
 
-type TPageQuery = Record<string, string | number | boolean | undefined>;
+type TPageQuery = Record<
+  string,
+  string | number | boolean | readonly string[] | undefined
+>;
 
+/** Lists go as "a,b", as the API's list filters take them; empty ones not at all. */
 const queryString = (query: TPageQuery) => {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
-    if (value !== undefined && value !== "") params.set(key, String(value));
+    const text = Array.isArray(value) ? value.join(",") : value;
+    if (text !== undefined && text !== "") params.set(key, String(text));
   }
   return params.toString();
 };
@@ -300,6 +298,40 @@ export const adminTemplatesApi = {
     apiRequest(`admin/templates/${encodeURIComponent(id)}`, {
       method: "PATCH",
       body: change,
+      authenticated: true,
+    }),
+};
+
+export type TAdminEmbed = {
+  id: string;
+  name: string;
+  publicKey: string;
+  allowedOrigins: string[];
+  disabled: boolean;
+  createdAt: string;
+  organization: {
+    id: string;
+    name: string;
+    type: "PERSONAL" | "TEAM";
+    /** Set for a personal account. */
+    owner: { id: string; email: string } | null;
+  };
+  /** The organization's embedded users, and their CVs. */
+  externalUsers: number;
+  externalCvs: number;
+};
+
+export const adminEmbedsApi = {
+  list: () =>
+    apiRequest<TAdminEmbed[]>("admin/embeds", {
+      method: "GET",
+      authenticated: true,
+    }),
+  /** Sites stop (or start) showing it at once. */
+  setDisabled: (id: string, disabled: boolean) =>
+    apiRequest(`admin/embeds/${encodeURIComponent(id)}/disabled`, {
+      method: "PATCH",
+      body: { disabled },
       authenticated: true,
     }),
 };

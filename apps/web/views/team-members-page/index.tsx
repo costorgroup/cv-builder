@@ -6,7 +6,6 @@ import {
   Button,
   DataTable,
   Flex,
-  NativeSelect,
   Skeleton,
   Small,
   Strong,
@@ -39,6 +38,7 @@ import {
   STeamMembersPageEmail,
   STeamMembersPageRole,
 } from "@/views/team-members-page/styles";
+import ValueSelect from "@/components/value-select";
 
 const shortDate = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 
@@ -230,7 +230,7 @@ const TeamMembersPage = () => {
       renderCell: ({ row }) =>
         isAdmin && row.role !== "OWNER" && row.userId !== me ? (
           <STeamMembersPageRole>
-            <NativeSelect
+            <ValueSelect
               aria-label={`${nameOf(row)}'s role`}
               size="sm"
               variant="subtle"
@@ -407,7 +407,7 @@ const TeamMembersPage = () => {
               }
             />
             <STeamMembersPageRole>
-              <NativeSelect
+              <ValueSelect
                 label="Role"
                 size="sm"
                 variant="subtle"

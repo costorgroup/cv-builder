@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import type { TUsage } from "@repo/cv-core";
 
 export type TOverviewPageStatProps = {
+  /** On a tinted tile, beside the rest. */
+  icon: ReactNode;
   label: string;
   /** The headline, e.g. the plan's name or "2 / 5". */
   value: ReactNode;

@@ -21,19 +21,61 @@ export const SOverviewPageStats = styled.div`
   `}
 `;
 
-export const SOverviewPageStat = styled(Card)`
+/** The greeting, and a line about the page under it. */
+export const SOverviewPageIntro = styled.div`
   ${({ theme }) => `
     display: flex;
     flex-direction: column;
-    gap: ${theme.spacing(2)};
+    gap: ${theme.spacing(1)};
+  `}
+`;
+
+/** A stat: its icon on a tile, then the label, value and the rest. */
+export const SOverviewPageStat = styled(Card)`
+  ${({ theme }) => `
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: ${theme.spacing(4)};
     padding: ${theme.spacing(5)};
     min-width: 0;
   `}
 `;
 
-/** Pushes a stat's action to the bottom of its card. */
+export const SOverviewPageStatIcon = styled.span`
+  ${({ theme }) => `
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: ${theme.radius.md};
+    background-color: color-mix(in srgb, ${theme.palette.primary.main} 12%, transparent);
+    color: ${theme.palette.primary.main};
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+  `}
+`;
+
+export const SOverviewPageStatBody = styled.div`
+  ${({ theme }) => `
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: ${theme.spacing(1.5)};
+    min-width: 0;
+  `}
+`;
+
+/** A stat's action, a little apart from the value. */
 export const SOverviewPageStatAction = styled.div`
-  margin-top: auto;
+  ${({ theme }) => `
+    margin-top: ${theme.spacing(1)};
+  `}
 `;
 
 export const SOverviewPageSectionHeader = styled(Flex)`

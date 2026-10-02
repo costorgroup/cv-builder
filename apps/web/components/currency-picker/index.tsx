@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { NativeSelect } from "@costor/ui";
 import { CURRENCY_COOKIE } from "@repo/cv-core";
 import { SCurrencyPicker } from "@/components/currency-picker/styles";
 import type { TCurrencyPickerProps } from "@/components/currency-picker/types";
+import ValueSelect from "@/components/value-select";
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
@@ -24,7 +24,7 @@ export const CurrencyPicker = ({
 
   return (
     <SCurrencyPicker>
-      <NativeSelect
+      <ValueSelect
         aria-label="Currency"
         size="sm"
         variant="subtle"

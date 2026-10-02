@@ -7,11 +7,13 @@ import {
   Chip,
   DataTable,
   Flex,
-  NativeSelect,
   Skeleton,
   Small,
   type TDataTableColumn,
 } from "@costor/ui";
+import TableFilters, {
+  TableFilterMultiSelect,
+} from "@/components/table-filters";
 import WideTable from "@/components/wide-table";
 import {
   adminBillingApi,
@@ -21,11 +23,7 @@ import {
 import { adminUserPath } from "@/utils/admin-path";
 import { ApiError } from "@/utils/api-client";
 import { formatMoney } from "@/utils/pricing";
-import {
-  SAdminUsersPageFilters,
-  SAdminUsersPageLink,
-  SAdminUsersPageSelect,
-} from "@/views/admin-users-page/styles";
+import { SAdminUsersPageLink } from "@/views/admin-users-page/styles";
 
 /** The newest this many matches are loaded; the table pages through them. */
 const LOADED_SUBSCRIPTIONS = 500;
@@ -137,11 +135,14 @@ const COLUMNS: TDataTableColumn<TSubscriptionRow>[] = [
   { id: "payments", key: "payments", name: "Payments" },
 ];
 
+/** Where the page starts: any status and plan, paying accounts only. */
+const DEFAULT_FILTERS: { status: string[]; planKey: string[]; paid: boolean } =
+  { status: [], planKey: [], paid: true };
+
 /** Every account's subscription, filterable by status, plan and paying. */
 const AdminSubscriptionsPage = () => {
-  const [status, setStatus] = useState("");
-  const [planKey, setPlanKey] = useState("");
-  const [paid, setPaid] = useState(true);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const { status, planKey, paid } = filters;
   const [page, setPage] = useState(1);
   const [plans, setPlans] = useState<TAdminPlan[]>([]);
   const [result, setResult] = useState<TResult>();
@@ -175,12 +176,52 @@ const AdminSubscriptionsPage = () => {
     return () => controller.abort();
   }, [status, planKey, paid]);
 
-  const filter =
-    <T,>(set: (value: T) => void) =>
-    (value: T) => {
-      set(value);
-      setPage(1);
-    };
+  const filter = (next: typeof DEFAULT_FILTERS) => {
+    setFilters(next);
+    setPage(1);
+  };
+
+  const statusLabel = (value: string) =>
+    value.charAt(0) + value.slice(1).toLowerCase().replace("_", " ");
+
+  const filterAction = (
+    <TableFilters
+      value={filters}
+      defaultValue={DEFAULT_FILTERS}
+      onChange={filter}
+      description="Show only the subscriptions with these statuses and plans. Pick none to see all."
+    >
+      {(draft, update) => (
+        <>
+          <TableFilterMultiSelect
+            label="Status"
+            placeholder="Any status"
+            value={draft.status}
+            options={STATUSES.map((value) => ({
+              value,
+              label: statusLabel(value),
+            }))}
+            onChange={(status) => update({ status })}
+          />
+          <TableFilterMultiSelect
+            label="Plan"
+            placeholder="Any plan"
+            value={draft.planKey}
+            options={plans.map(({ key, name }) => ({
+              value: key,
+              label: name,
+            }))}
+            onChange={(planKey) => update({ planKey })}
+          />
+          <CheckBox
+            label="Paying only"
+            checked={draft.paid}
+            onChange={(event) => update({ paid: event.target.checked })}
+          />
+        </>
+      )}
+    </TableFilters>
+  );
 
   const renderTable = () => {
     if (!result) {
@@ -202,6 +243,7 @@ const AdminSubscriptionsPage = () => {
           radius="lg"
           pageSize={PAGE_SIZE}
           title="Subscriptions"
+          actions={filterAction}
           description="Every account's plan, what it pays and when it renews. Recently changed first."
           searchPlaceholder="Search by email, plan or status"
           page={page}
@@ -213,46 +255,6 @@ const AdminSubscriptionsPage = () => {
 
   return (
     <Flex direction="column" gap={4}>
-      <SAdminUsersPageFilters gap={3} wrap="wrap" align="center">
-        <SAdminUsersPageSelect>
-          <NativeSelect
-            aria-label="Status"
-            size="sm"
-            variant="subtle"
-            value={status}
-            options={[
-              { value: "", label: "Any status" },
-              ...STATUSES.map((value) => ({
-                value,
-                label:
-                  value.charAt(0) +
-                  value.slice(1).toLowerCase().replace("_", " "),
-              })),
-            ]}
-            onChange={(_, value) => filter(setStatus)(value)}
-          />
-        </SAdminUsersPageSelect>
-        <SAdminUsersPageSelect>
-          <NativeSelect
-            aria-label="Plan"
-            size="sm"
-            variant="subtle"
-            value={planKey}
-            options={[
-              { value: "", label: "Any plan" },
-              ...plans.map(({ key, name }) => ({ value: key, label: name })),
-            ]}
-            onChange={(_, value) => filter(setPlanKey)(value)}
-          />
-        </SAdminUsersPageSelect>
-        <CheckBox
-          size="sm"
-          label="Paying only"
-          checked={paid}
-          onChange={(event) => filter(setPaid)(event.target.checked)}
-        />
-      </SAdminUsersPageFilters>
-
       {result && !("error" in result) && result.total > result.items.length && (
         <Small color="secondary">
           Only the {result.items.length} most recently changed are loaded.

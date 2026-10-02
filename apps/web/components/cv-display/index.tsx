@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
 import { useCv } from "@/providers/cv-provider/context";
 import CvSectionResizers from "@/components/cv-section-resizers";
 import {
@@ -16,6 +23,8 @@ import {
   SCvDisplayPageFrame,
 } from "@/components/cv-display/styles";
 import type { TCvDisplayProps } from "@/components/cv-display/types";
+import { CV_STEP_ATTRIBUTE } from "@/templates/shared";
+import { isCvEditorStep } from "@repo/cv-core";
 
 /**
  * The CV preview. Content that doesn't fit on one page continues on the next;
@@ -26,6 +35,7 @@ export const CvDisplay = ({
   variant = "preview",
   onReady,
   page,
+  onStepSelect,
   ...props
 }: TCvDisplayProps) => {
   const { template, colors, sizes, typography } = useCv();
@@ -77,6 +87,14 @@ export const CvDisplay = ({
     }
   }, [content, layoutVersion, pagination]);
 
+  // Opens the step of the innermost clicked part of the CV.
+  const onPageClick = (event: MouseEvent<HTMLDivElement>) => {
+    const step = (event.target as Element)
+      .closest(`[${CV_STEP_ATTRIBUTE}]`)
+      ?.getAttribute(CV_STEP_ATTRIBUTE);
+    if (step && isCvEditorStep(step)) onStepSelect?.(step);
+  };
+
   return (
     <SCvDisplay variant={variant} {...props}>
       <style ref={styleRef}>{pagination.css}</style>
@@ -96,6 +114,8 @@ export const CvDisplay = ({
           <SCvDisplayPageFrame key={index} variant={variant}>
             <SCvDisplayPage
               variant={variant}
+              selectable={Boolean(onStepSelect)}
+              onClick={onStepSelect && onPageClick}
               aria-label={`Page ${index + 1} of ${pagination.pages}`}
             >
               <SCvDisplayDocument

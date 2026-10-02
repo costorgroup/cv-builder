@@ -19,6 +19,7 @@ import {
 } from '../generated/prisma/client.js';
 import type { MailService } from '../mail/mail.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
+import type { AssetsService } from '../storage/assets.service.js';
 import { isStillBilling, teamSlug, TeamsService } from './teams.service.js';
 
 const owner: TTeamContext = { id: 'team', role: OrganizationRole.OWNER };
@@ -109,6 +110,7 @@ const setup = ({
     } as unknown as EntitlementService,
     mail as unknown as MailService,
     { record: vi.fn() } as unknown as AuditService,
+    { removeForOrganization: vi.fn() } as unknown as AssetsService,
   );
   return { service, writes, mail };
 };

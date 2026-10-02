@@ -49,14 +49,15 @@ const embedRequest = async <T>(
   } = {},
 ): Promise<T> => {
   const headers: Record<string, string> = {};
-  if (body) headers["Content-Type"] = "application/json";
+  const isForm = body instanceof FormData;
+  if (body && !isForm) headers["Content-Type"] = "application/json";
   if (sessionToken) headers.Authorization = `Bearer ${sessionToken}`;
   // Lets the API check the page showing the embed is one it allows.
   if (parentOrigin) headers["X-Embed-Parent-Origin"] = parentOrigin;
   const response = await fetch(`/api/embed/v1/${path}`, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,
+    body: isForm ? body : body ? JSON.stringify(body) : undefined,
     signal,
   });
   if (!response.ok) {
@@ -114,6 +115,14 @@ export const embedApi = {
       ? embedRequest<TSavedCv>(`cvs/${cvId}`, { method: "PATCH", body })
       : embedRequest<TSavedCv>("cvs", { method: "POST", body }),
   remove: (id: string) => embedRequest(`cvs/${id}`, { method: "DELETE" }),
+  uploadPhoto: (file: Blob) => {
+    const form = new FormData();
+    form.append("file", file, "photo.jpg");
+    return embedRequest<{ id: string; url: string }>("assets/photos", {
+      method: "POST",
+      body: form,
+    });
+  },
   pdf: (source: TCvPdfSource) =>
     "id" in source
       ? embedRequest<Blob>(`cvs/${source.id}/pdf`, {

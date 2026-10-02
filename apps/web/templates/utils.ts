@@ -1,5 +1,1 @@
-export {
-  getDefaultSizes,
-  getSectionSize,
-  resizeSection,
-} from "@repo/cv-core";
+export { getDefaultSizes, getSectionSize, resizeSection } from "@repo/cv-core";

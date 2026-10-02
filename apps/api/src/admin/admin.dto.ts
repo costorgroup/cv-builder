@@ -1,5 +1,6 @@
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsIn,
@@ -21,6 +22,16 @@ import {
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
 
+/** "a,b" (or a repeated query parameter) as ["a", "b"]; empty parts dropped. */
+const commaList = ({ value }: { value: unknown }) =>
+  (Array.isArray(value) ? value : [value])
+    .flatMap((each) => (typeof each === 'string' ? each.split(',') : [each]))
+    .map((each) => (typeof each === 'string' ? each.trim() : each))
+    .filter((each) => each !== '');
+
+/** The most values one list filter takes. */
+const MAX_FILTER_VALUES = 100;
+
 export class ListUsersQuery {
   /** Matches the email or name. */
   @IsOptional()
@@ -29,13 +40,19 @@ export class ListUsersQuery {
   @MaxLength(100)
   search?: string;
 
+  /** Any of these, separated by commas; all when left out. */
   @IsOptional()
-  @IsIn(['active', 'disabled'])
-  status?: 'active' | 'disabled';
+  @Transform(commaList)
+  @ArrayMaxSize(MAX_FILTER_VALUES)
+  @IsIn(['active', 'disabled'], { each: true })
+  status?: ('active' | 'disabled')[];
 
+  /** Any of these, separated by commas; all when left out. */
   @IsOptional()
-  @IsIn(Object.values(PlatformRole))
-  role?: PlatformRole;
+  @Transform(commaList)
+  @ArrayMaxSize(MAX_FILTER_VALUES)
+  @IsIn(Object.values(PlatformRole), { each: true })
+  role?: PlatformRole[];
 
   @IsOptional()
   @Type(() => Number)
@@ -74,14 +91,20 @@ const upperCase = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim().toUpperCase() : value;
 
 export class ListSubscriptionsQuery {
+  /** Any of these, separated by commas; all when left out. */
   @IsOptional()
-  @IsIn(STATUSES)
-  status?: (typeof STATUSES)[number];
+  @Transform(commaList)
+  @ArrayMaxSize(MAX_FILTER_VALUES)
+  @IsIn(STATUSES, { each: true })
+  status?: (typeof STATUSES)[number][];
 
+  /** Any of these plans, separated by commas; all when left out. */
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  planKey?: string;
+  @Transform(commaList)
+  @ArrayMaxSize(MAX_FILTER_VALUES)
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
+  planKey?: string[];
 
   /** Only ones paid through the payment provider. */
   @IsOptional()
@@ -166,10 +189,13 @@ export class AddPriceDto {
 }
 
 export class ListAuditLogsQuery {
+  /** Any of these, separated by commas; all when left out. */
   @IsOptional()
-  @IsString()
-  @MaxLength(60)
-  action?: string;
+  @Transform(commaList)
+  @ArrayMaxSize(MAX_FILTER_VALUES)
+  @IsString({ each: true })
+  @MaxLength(60, { each: true })
+  action?: string[];
 
   @IsOptional()
   @IsString()

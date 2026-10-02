@@ -1,7 +1,7 @@
 "use client";
 
 import type { TPersonalInformationPageProps } from "@/views/personal-information-page/types";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { Flex, GridCell } from "@costor/ui";
 import { CvTextArea, CvTextField } from "@/components/cv-form-fields";
 import CvLocationFields from "@/components/cv-location-fields";
@@ -10,30 +10,47 @@ import {
   SPersonalInformationPageGrid,
   SPersonalInformationPagePhoto,
 } from "@/views/personal-information-page/styles";
+import { useCvEditorEnv } from "@/providers/cv-editor-env";
 import { useCv } from "@/providers/cv-provider/context";
+import { assetsApi } from "@/utils/assets-api";
 import { dataUrlToFile, readImageAsDataUrl } from "@/utils/read-image";
 
 const PersonalInformationPage = ({
   ...props
 }: TPersonalInformationPageProps) => {
   const { data, updateCvData } = useCv();
+  const { uploadPhoto = assetsApi.uploadPhoto } = useCvEditorEnv();
   const { photo } = data.personalInformation;
+  // The latest pick; an earlier upload finishing late doesn't replace it.
+  const latestPick = useRef(0);
 
-  // The photo lives in the form as a data URL; the dropzone is controlled
-  // with it, so it still shows the photo after leaving and coming back.
+  // The dropzone is controlled, so it still shows the photo after leaving
+  // and coming back; the preview below draws the photo itself.
   const photoFiles = useMemo(
-    () => (photo ? [dataUrlToFile(photo, "photo.jpg")] : []),
+    () => (photo ? [new File([], "photo.jpg", { type: "image/jpeg" })] : []),
     [photo],
   );
 
   const onPhotoFiles = async ([file]: File[]) => {
     if (!file) return;
+    const pick = ++latestPick.current;
+    let dataUrl: string;
     try {
-      updateCvData("personalInformation", {
-        photo: await readImageAsDataUrl(file),
-      });
+      dataUrl = await readImageAsDataUrl(file);
     } catch {
       // Not an image the browser can read; keep the current photo.
+      return;
+    }
+    // Shown at once, scaled down; then stored as a file and linked, so the
+    // CV doesn't carry the image itself.
+    updateCvData("personalInformation", { photo: dataUrl });
+    try {
+      const { url } = await uploadPhoto(dataUrlToFile(dataUrl, "photo.jpg"));
+      if (pick === latestPick.current) {
+        updateCvData("personalInformation", { photo: url });
+      }
+    } catch {
+      // Kept inline for now; saving the CV stores it as a file.
     }
   };
 
@@ -51,7 +68,7 @@ const PersonalInformationPage = ({
           onFiles={onPhotoFiles}
           onRemove={() => updateCvData("personalInformation", { photo: "" })}
           renderPreview={() => (
-            // The photo is a data URL, not a static asset.
+            // A stored upload (or one still uploading), not a static asset.
             // eslint-disable-next-line @next/next/no-img-element
             <img src={photo} alt="Photo" />
           )}

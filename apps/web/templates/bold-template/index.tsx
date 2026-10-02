@@ -25,6 +25,8 @@ import {
   TemplatePhotoContent,
   useTemplateContent,
   type TTemplateEntry,
+  cvStep,
+  type TTemplateStep,
 } from "@/templates/shared";
 import { boldTemplateSpec } from "@repo/cv-core";
 import type { TTemplate } from "@/templates/types";
@@ -49,6 +51,7 @@ const BoldTemplateCv = ({ colors, sizes, typography }: TBoldTemplateProps) => {
 
   // Wide sections span both body columns.
   const renderSection = (
+    step: TTemplateStep,
     title: string,
     show: boolean,
     children: ReactNode,
@@ -57,15 +60,20 @@ const BoldTemplateCv = ({ colors, sizes, typography }: TBoldTemplateProps) => {
     if (!show) return null;
     const Section = wide ? SBoldTemplateWideSection : SBoldTemplateSection;
     return (
-      <Section>
+      <Section {...cvStep(step)}>
         <SBoldTemplateHeading cvColors={colors}>{title}</SBoldTemplateHeading>
         {children}
       </Section>
     );
   };
 
-  const renderList = (title: string, entries: TTemplateEntry[]) =>
+  const renderList = (
+    step: TTemplateStep,
+    title: string,
+    entries: TTemplateEntry[],
+  ) =>
     renderSection(
+      step,
       title,
       entries.length > 0,
       <SBoldTemplateList>
@@ -84,8 +92,15 @@ const BoldTemplateCv = ({ colors, sizes, typography }: TBoldTemplateProps) => {
         cvColors={colors}
         basis={getSectionSize(sizes, "rows", "hero", 36)}
       >
-        {fullName && <SBoldTemplateName>{fullName}</SBoldTemplateName>}
-        <SBoldTemplatePhoto cvColors={colors}>
+        {fullName && (
+          <SBoldTemplateName {...cvStep("personal-information")}>
+            {fullName}
+          </SBoldTemplateName>
+        )}
+        <SBoldTemplatePhoto
+          {...cvStep("personal-information")}
+          cvColors={colors}
+        >
           <TemplatePhotoContent
             photo={photo}
             initials={initials}
@@ -98,28 +113,33 @@ const BoldTemplateCv = ({ colors, sizes, typography }: TBoldTemplateProps) => {
         basis={getSectionSize(sizes, "rows", "body", 64)}
       >
         {renderSection(
+          "personal-information",
           "About",
           Boolean(aboutMe),
           <SBoldTemplateParagraph>{aboutMe}</SBoldTemplateParagraph>,
           true,
         )}
         {renderSection(
+          "work-experience",
           "Experience",
           experience.length > 0,
           <TemplateEntries items={experience} />,
           true,
         )}
         {renderSection(
+          "education",
           "Education",
           education.length > 0,
           <TemplateEntries items={education} />,
         )}
         {renderSection(
+          "projects",
           "Projects",
           projects.length > 0,
           <TemplateEntries items={projects} />,
         )}
         {renderSection(
+          "skills",
           "Skills",
           skills.length > 0,
           <TemplateChips
@@ -129,6 +149,7 @@ const BoldTemplateCv = ({ colors, sizes, typography }: TBoldTemplateProps) => {
           />,
         )}
         {renderSection(
+          "languages",
           "Languages",
           languages.length > 0,
           <TemplateLevels
@@ -139,6 +160,7 @@ const BoldTemplateCv = ({ colors, sizes, typography }: TBoldTemplateProps) => {
           />,
         )}
         {renderSection(
+          "interests",
           "Interests",
           interests.length > 0,
           <TemplateChips
@@ -148,12 +170,13 @@ const BoldTemplateCv = ({ colors, sizes, typography }: TBoldTemplateProps) => {
           />,
         )}
         {renderSection(
+          "certificates",
           "Certificates",
           certificates.length > 0,
           <TemplateEntries items={certificates} />,
         )}
-        {renderList("Contact", contact)}
-        {renderList("Social", socials)}
+        {renderList("personal-information", "Contact", contact)}
+        {renderList("social-media", "Social", socials)}
       </SBoldTemplateBody>
     </SBoldTemplate>
   );

@@ -36,8 +36,7 @@ const SECTIONS: TLegalSection[] = [
         <li>You must be at least 16 years old to create an account.</li>
         <li>
           Give us accurate details when you sign up, and keep your password
-          secret. You&apos;re responsible for everything done with your
-          account.
+          secret. You&apos;re responsible for everything done with your account.
         </li>
         <li>
           Tell us straight away at {CONTACT_EMAIL} if you think someone else has
@@ -71,13 +70,17 @@ const SECTIONS: TLegalSection[] = [
       <>
         <p>You agree not to:</p>
         <ul>
-          <li>use the Service for anything unlawful, fraudulent or misleading;</li>
+          <li>
+            use the Service for anything unlawful, fraudulent or misleading;
+          </li>
           <li>upload content that infringes someone else&apos;s rights;</li>
           <li>
             try to break, overload or get around the security of the Service,
             including by automated scraping or excessive requests;
           </li>
-          <li>resell or redistribute the Service or our templates as your own.</li>
+          <li>
+            resell or redistribute the Service or our templates as your own.
+          </li>
         </ul>
       </>
     ),
@@ -87,10 +90,10 @@ const SECTIONS: TLegalSection[] = [
     title: "Plans and payments",
     content: (
       <p>
-        The free plan is free of charge. Paid plans, when offered, are
-        described on our <NextLink href="/pricing">pricing page</NextLink>,
-        including their price, what&apos;s included and how long they last.
-        Any taxes that apply are shown before you pay.
+        The free plan is free of charge. Paid plans, when offered, are described
+        on our <NextLink href="/pricing">pricing page</NextLink>, including
+        their price, what&apos;s included and how long they last. Any taxes that
+        apply are shown before you pay.
       </p>
     ),
   },
@@ -99,9 +102,9 @@ const SECTIONS: TLegalSection[] = [
     title: "Our intellectual property",
     content: (
       <p>
-        The Service, including its software, design and templates, belongs to
-        us or our licensors. You may use the templates to create CVs for
-        yourself; you may not copy, sell or distribute them separately.
+        The Service, including its software, design and templates, belongs to us
+        or our licensors. You may use the templates to create CVs for yourself;
+        you may not copy, sell or distribute them separately.
       </p>
     ),
   },
@@ -123,14 +126,14 @@ const SECTIONS: TLegalSection[] = [
       <>
         <p>
           We work hard to keep the Service available and your data safe, but
-          it&apos;s provided &quot;as is&quot; without guarantees. We
-          can&apos;t promise that a CV made with {SITE_NAME} will get you an
-          interview or a job.
+          it&apos;s provided &quot;as is&quot; without guarantees. We can&apos;t
+          promise that a CV made with {SITE_NAME} will get you an interview or a
+          job.
         </p>
         <p>
           To the extent the law allows, we&apos;re not liable for indirect or
-          consequential losses. Nothing in these terms limits rights you have
-          as a consumer that can&apos;t be limited by law.
+          consequential losses. Nothing in these terms limits rights you have as
+          a consumer that can&apos;t be limited by law.
         </p>
       </>
     ),
@@ -140,9 +143,9 @@ const SECTIONS: TLegalSection[] = [
     title: "Changes to these terms",
     content: (
       <p>
-        We may update these terms. If a change is significant we&apos;ll let
-        you know, for example by email or a notice in the app. The date at the
-        top shows when they last changed.
+        We may update these terms. If a change is significant we&apos;ll let you
+        know, for example by email or a notice in the app. The date at the top
+        shows when they last changed.
       </p>
     ),
   },

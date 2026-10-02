@@ -87,8 +87,10 @@ const EmbedEditorLayout = ({
           )}
         </SEmbedEditorLayoutBrand>
       ),
-      themeToggle: false,
+      topNav: false,
+      exitPath: embedPath(publicKey),
       save: embedApi.save,
+      uploadPhoto: embedApi.uploadPhoto,
       fetchPdf: embedApi.pdf,
       canDownload: config.features.includes("pdf.download"),
       onSaved: (cv) => {

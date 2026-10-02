@@ -8,7 +8,10 @@ import AuthForm from "@/components/auth-form";
 import FormTextField from "@/components/form-text-field";
 import { authApi, safeRedirectPath } from "@/utils/auth-api";
 import { emailRules, passwordRules } from "@/utils/auth-rules";
-import type { TSignInPageProps, TSignInValues } from "@/views/sign-in-page/types";
+import type {
+  TSignInPageProps,
+  TSignInValues,
+} from "@/views/sign-in-page/types";
 
 const SignInPage = ({ next }: TSignInPageProps) => {
   const router = useRouter();

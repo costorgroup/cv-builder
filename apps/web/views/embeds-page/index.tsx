@@ -8,7 +8,7 @@ import {
   Chip,
   DataTable,
   Flex,
-  NativeSelect,
+  Modal,
   Skeleton,
   Small,
   Strong,
@@ -37,10 +37,12 @@ import { useTemplateCatalog } from "@/utils/template-catalog";
 import { teamSubscriptionPath } from "@/utils/team-path";
 import { SApiKeysPageCode } from "@/views/api-keys-page/styles";
 import {
+  SEmbedsPagePreview,
   SEmbedsPageChecks,
   SEmbedsPageColor,
   SEmbedsPageField,
 } from "@/views/embeds-page/styles";
+import ValueSelect from "@/components/value-select";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -162,6 +164,8 @@ const EmbedsPage = () => {
   const [draft, setDraft] = useState<TDraft>();
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<string>();
+  /** The embed's address with a one-time token, while previewing. */
+  const [preview, setPreview] = useState<string>();
   const [notice, setNotice] = useState<TNotice>();
 
   const load = useCallback(
@@ -251,6 +255,22 @@ const EmbedsPage = () => {
       setEditing(undefined);
       setDraft(undefined);
     }, "Embed deleted.");
+  };
+
+  const onPreview = async () => {
+    if (!current) return;
+    setBusy(true);
+    setNotice(undefined);
+    try {
+      const { launchToken } = await embedsApi.preview(current.id, team?.id);
+      setPreview(
+        `/embed/${current.publicKey}#launch=${encodeURIComponent(launchToken)}`,
+      );
+    } catch (error) {
+      setNotice(planRestrictionOf(error) ?? { error: messageOf(error) });
+    } finally {
+      setBusy(false);
+    }
   };
 
   const onCopy = async (key: string, text: string) => {
@@ -390,6 +410,9 @@ const EmbedsPage = () => {
               >
                 Close
               </Button>
+              <Button disabled={busy || current.disabled} onClick={onPreview}>
+                Preview
+              </Button>
               <Button
                 variant="solid"
                 color="primary"
@@ -450,7 +473,7 @@ const EmbedsPage = () => {
                 />
               </SEmbedsPageField>
               <SEmbedsPageField width={180}>
-                <NativeSelect
+                <ValueSelect
                   label="Light or dark"
                   size="sm"
                   variant="subtle"
@@ -624,6 +647,19 @@ const EmbedsPage = () => {
           </Flex>
         </SettingsCard>
       )}
+      <Modal
+        open={!!preview}
+        onClose={() => setPreview(undefined)}
+        title="Preview"
+        size="lg"
+      >
+        <Small color="secondary">
+          As a visitor sees it, with the saved settings. You preview as a
+          separate test user: what you make here isn't anyone else&apos;s, and
+          doesn&apos;t count toward the plan.
+        </Small>
+        {preview && <SEmbedsPagePreview src={preview} title="Embed preview" />}
+      </Modal>
     </Flex>
   );
 };

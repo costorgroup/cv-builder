@@ -9,23 +9,20 @@ import {
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
-  SettingsIcon,
   Skeleton,
   UsersIcon,
 } from "@costor/ui";
 import ButtonLink from "@/components/button-link";
 import RequireSignIn from "@/components/require-sign-in";
 import SideNav from "@/components/side-nav";
-import type { TSideNavItem } from "@/components/side-nav/types";
+import type { TSideNavGroup } from "@/components/side-nav/types";
 import TopNav from "@/components/top-nav";
+import { STopNavFrost } from "@/components/top-nav/styles";
 import WorkspaceSwitcher from "@/components/workspace-switcher";
-import {
-  CodeIcon,
-  EmbedIcon,
-  SubscriptionIcon,
-} from "@/layouts/dashboard-layout/icons";
+import { CodeIcon, SubscriptionIcon } from "@/layouts/dashboard-layout/icons";
 import {
   SDashboardLayout,
+  SDashboardLayoutAside,
   SDashboardLayoutBody,
   SDashboardLayoutContent,
 } from "@/layouts/dashboard-layout/styles";
@@ -38,20 +35,73 @@ import {
   TEAMS_PATH,
   teamApiKeysPath,
   teamEmbedsPath,
+  teamStoragePath,
   teamPath,
   teamSettingsPath,
   teamSubscriptionPath,
 } from "@/utils/team-path";
 
+const MEMBERS_DESCRIPTION = "Who's in the team, and invites";
+
+const navGroups = (slug: string): TSideNavGroup[] => [
+  {
+    label: "Team",
+    description: "Who's in it, and how it's set up",
+    icon: <UsersIcon />,
+    items: [
+      {
+        label: "Members",
+        description: MEMBERS_DESCRIPTION,
+        href: teamPath(slug),
+        exact: true,
+      },
+      {
+        label: "Settings",
+        description: "Name, leaving and deleting",
+        href: teamSettingsPath(slug),
+      },
+    ],
+  },
+  {
+    label: "Plan",
+    description: "What the team pays for",
+    icon: <SubscriptionIcon />,
+    items: [
+      {
+        label: "Subscription",
+        description: "The team's plan",
+        href: teamSubscriptionPath(slug),
+      },
+      {
+        label: "Storage",
+        description: "Where the team's files are kept",
+        href: teamStoragePath(slug),
+      },
+    ],
+  },
+  {
+    label: "Integrations",
+    description: "The CV builder in the team's apps and sites",
+    icon: <CodeIcon />,
+    items: [
+      {
+        label: "API keys",
+        description: "Keys for the team's own apps",
+        href: teamApiKeysPath(slug),
+      },
+      {
+        label: "Embeds",
+        description: "The CV builder on the team's sites",
+        href: teamEmbedsPath(slug),
+      },
+    ],
+  },
+];
+
 /** The top bar's line under the team's name, per page. */
-const descriptionFor = (pathname: string, slug: string) => {
-  if (pathname === teamSubscriptionPath(slug)) return "The team's plan";
-  if (pathname === teamSettingsPath(slug)) return "Name, leaving and deleting";
-  if (pathname === teamApiKeysPath(slug)) return "Keys for the team's own apps";
-  if (pathname === teamEmbedsPath(slug))
-    return "The CV builder on the team's sites";
-  return "Who's in the team, and invites";
-};
+const descriptionFor = (groups: TSideNavGroup[], pathname: string) =>
+  groups.flatMap((group) => group.items).find(({ href }) => href === pathname)
+    ?.description ?? MEMBERS_DESCRIPTION;
 
 const TeamNotFound = () => (
   <Empty variant="surface" radius="lg">
@@ -79,22 +129,7 @@ const TeamShell = ({ slug, children }: TTeamLayoutProps) => {
       : undefined;
   const context = useMemo(() => team && { team }, [team]);
 
-  const items: TSideNavItem[] = [
-    {
-      label: "Members",
-      href: teamPath(slug),
-      icon: <UsersIcon />,
-      exact: true,
-    },
-    {
-      label: "Subscription",
-      href: teamSubscriptionPath(slug),
-      icon: <SubscriptionIcon />,
-    },
-    { label: "API keys", href: teamApiKeysPath(slug), icon: <CodeIcon /> },
-    { label: "Embeds", href: teamEmbedsPath(slug), icon: <EmbedIcon /> },
-    { label: "Settings", href: teamSettingsPath(slug), icon: <SettingsIcon /> },
-  ];
+  const groups = useMemo(() => navGroups(slug), [slug]);
 
   const renderContent = () => {
     if (teams.status === "loading") {
@@ -112,13 +147,21 @@ const TeamShell = ({ slug, children }: TTeamLayoutProps) => {
 
   return (
     <SDashboardLayout>
-      <TopNav
-        homeHref={teamPath(slug)}
-        title={team?.name ?? "Team"}
-        description={descriptionFor(pathname, slug)}
-      />
+      <STopNavFrost>
+        <TopNav
+          homeHref={teamPath(slug)}
+          title={team?.name ?? "Team"}
+          description={descriptionFor(groups, pathname)}
+        />
+      </STopNavFrost>
       <SDashboardLayoutBody>
-        <SideNav items={items} label="Team" header={<WorkspaceSwitcher />} />
+        <SDashboardLayoutAside>
+          <SideNav
+            groups={groups}
+            label="Team"
+            header={<WorkspaceSwitcher />}
+          />
+        </SDashboardLayoutAside>
         <SDashboardLayoutContent>{renderContent()}</SDashboardLayoutContent>
       </SDashboardLayoutBody>
     </SDashboardLayout>

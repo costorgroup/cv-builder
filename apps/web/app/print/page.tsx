@@ -37,7 +37,20 @@ const PrintPage = () => {
           <CvDisplay
             variant="print"
             onReady={() => {
-              window.__CV_READY__ = true;
+              // Photos are linked files now, not inline data: print once
+              // every image has loaded (or failed), so none is missing.
+              void Promise.all(
+                [...document.images].map((image) =>
+                  image.complete
+                    ? undefined
+                    : new Promise((settle) => {
+                        image.addEventListener("load", settle);
+                        image.addEventListener("error", settle);
+                      }),
+                ),
+              ).then(() => {
+                window.__CV_READY__ = true;
+              });
             }}
           />
         </CvProvider>

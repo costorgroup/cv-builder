@@ -6,6 +6,4 @@ export type TDashboardLayoutProps = {
 export type TDashboardLayoutPage = {
   title: string;
   description: string;
-  /** Shows the CV search in the top bar. */
-  searchable?: boolean;
 };

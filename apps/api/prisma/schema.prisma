@@ -33,6 +33,11 @@ model User {
   cvs                  Cv[]
   memberships          OrganizationMember[]
   personalOrganization Organization?        @relation("PersonalOrganization")
+
+  /// The admin users list, newest first.
+  @@index([createdAt])
+  /// "Active in the last 30 days" on the admin overview.
+  @@index([lastActiveAt])
 }
 
 /// A saved CV: the same `data` + `appearance` document the editor works on.
@@ -57,6 +62,7 @@ model Cv {
   user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   externalUser   ExternalUser? @relation(fields: [externalUserId], references: [id], onDelete: Cascade)
   organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assets         Asset[]
 
   @@index([userId, updatedAt])
   @@index([externalUserId, updatedAt])
@@ -97,6 +103,8 @@ model Organization {
   apiKeys         ApiKey[]
   embedConfigs    EmbedConfig[]
   externalUsers   ExternalUser[]
+  assets          Asset[]
+  storageConfig   StorageConfig?
 }
 
 /// How often something metered (e.g. "pdf.generated") happened in one
@@ -212,6 +220,8 @@ model Subscription {
 
   @@index([planId])
   @@index([status, currentPeriodEnd])
+  /// The admin subscriptions list, most recently changed first.
+  @@index([updatedAt])
 }
 
 /// One signed-in device. Holds the hash of its refresh token, so signing out
@@ -231,6 +241,8 @@ model Session {
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  /// Housekeeping clears expired sessions.
+  @@index([expiresAt])
 }
 
 enum AuthTokenType {
@@ -249,6 +261,8 @@ model AuthToken {
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, type])
+  /// Housekeeping clears expired tokens.
+  @@index([expiresAt])
 }
 
 /// Location reference data from GeoNames (https://www.geonames.org, CC BY 4.0),
@@ -467,4 +481,72 @@ model EmbedLaunchToken {
   createdAt      DateTime     @default(now())
   embedConfig    EmbedConfig  @relation(fields: [embedConfigId], references: [id], onDelete: Cascade)
   externalUser   ExternalUser @relation(fields: [externalUserId], references: [id], onDelete: Cascade)
+}
+
+enum AssetKind {
+  PHOTO
+}
+
+/// Where a file is kept: our storage, or an organization's own bucket.
+enum StorageKind {
+  PLATFORM
+  S3
+}
+
+/// A stored file, e.g. a CV's photo. Served at `/assets/{id}`; the id is
+/// random, so only those given the link can load it. Belongs to one CV once
+/// that CV is saved; files left without one are cleared after a day.
+model Asset {
+  id             String       @id @default(uuid())
+  organizationId String
+  /// The CV using it; null until a CV is saved with it, or once it's gone.
+  cvId           String?
+  /// Who uploaded it: a user or an embed's end user. Only they can attach it.
+  userId         String?
+  externalUserId String?
+  kind           AssetKind
+  storage        StorageKind  @default(PLATFORM)
+  /// Always under `org/{organizationId}/`.
+  storageKey     String
+  contentType    String
+  sizeBytes      Int
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cv             Cv?          @relation(fields: [cvId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  /// A CV's files, and (with cvId null) uploads waiting to be cleared.
+  @@index([cvId, createdAt])
+}
+
+/// An organization's own bucket for its files (with `storage.external`).
+/// New uploads go there once it's verified; files already stored stay where
+/// they are. Credentials are encrypted and never sent back out.
+model StorageConfig {
+  id                   String       @id @default(uuid())
+  organizationId       String       @unique
+  provider             StorageKind
+  /// Bucket, region, endpoint and prefix; see `TS3Settings`.
+  settings             Json
+  /// AES-256-GCM (STORAGE_ENCRYPTION_KEY) of the access key and secret.
+  credentialsEncrypted Bytes
+  /// The access key id's last 4 characters, to show which key is in use.
+  accessKeyHint        String
+  /// Set by a successful check; cleared whenever the settings change.
+  verifiedAt           DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+/// Requests counted per key (an IP, an API key…) per time window, shared by
+/// every API instance when RATE_LIMIT_STORE=database. Old windows are
+/// cleared by housekeeping.
+model RateLimitCounter {
+  key         String
+  windowStart DateTime
+  hits        Int      @default(0)
+
+  @@id([key, windowStart])
+  @@index([windowStart])
 }

@@ -80,9 +80,9 @@ const SECTIONS: TLegalSection[] = [
     title: "Open-source software",
     content: (
       <p>
-        {SITE_NAME} is built with open-source software including Next.js,
-        React, Emotion, React Hook Form, NestJS and Prisma. These run as part of
-        our own application and don&apos;t send your data to their authors.
+        {SITE_NAME} is built with open-source software including Next.js, React,
+        Emotion, React Hook Form, NestJS and Prisma. These run as part of our
+        own application and don&apos;t send your data to their authors.
       </p>
     ),
   },

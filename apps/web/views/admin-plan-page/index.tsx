@@ -7,7 +7,6 @@ import {
   CheckBox,
   DataTable,
   Flex,
-  NativeSelect,
   Skeleton,
   Small,
   type TDataTableColumn,
@@ -34,6 +33,7 @@ import {
   SAdminPlanPageFields,
   SAdminPlanPagePriceField,
 } from "@/views/admin-plan-page/styles";
+import ValueSelect from "@/components/value-select";
 
 const PERIODS: TAdminPlanPrice["period"][] = ["MONTHLY", "QUARTERLY", "YEARLY"];
 
@@ -347,7 +347,7 @@ const AdminPlanPage = ({ id }: { id: string }) => {
         >
           <Flex gap={3} align="flex-end" wrap="wrap">
             <SAdminPlanPagePriceField width={160}>
-              <NativeSelect
+              <ValueSelect
                 label="Period"
                 size="sm"
                 variant="subtle"

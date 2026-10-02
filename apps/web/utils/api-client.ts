@@ -45,11 +45,14 @@ export const apiRequest = async <T = void>(
     responseType = "json",
   }: TApiRequestOptions = {},
 ): Promise<T> => {
+  // A file upload goes as it is; the browser sets its multipart headers.
+  const isForm = body instanceof FormData;
   const send = () =>
     fetch(`/api/${path}`, {
       method,
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
+      headers:
+        body && !isForm ? { "Content-Type": "application/json" } : undefined,
+      body: isForm ? body : body ? JSON.stringify(body) : undefined,
       signal,
     });
 

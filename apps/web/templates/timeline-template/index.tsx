@@ -24,6 +24,8 @@ import {
   TemplatePhotoContent,
   useTemplateContent,
   type TTemplateEntry,
+  cvStep,
+  type TTemplateStep,
 } from "@/templates/shared";
 import { timelineTemplateSpec } from "@repo/cv-core";
 import type { TTemplate } from "@/templates/types";
@@ -51,9 +53,14 @@ const TimelineTemplateCv = ({
   } = useTemplateContent();
 
   // Every section is a stop on the timeline.
-  const renderItem = (title: string, show: boolean, children: ReactNode) =>
+  const renderItem = (
+    step: TTemplateStep,
+    title: string,
+    show: boolean,
+    children: ReactNode,
+  ) =>
     show && (
-      <STimelineTemplateItem cvColors={colors}>
+      <STimelineTemplateItem {...cvStep(step)} cvColors={colors}>
         <STimelineTemplateHeading cvColors={colors}>
           {title}
         </STimelineTemplateHeading>
@@ -61,8 +68,13 @@ const TimelineTemplateCv = ({
       </STimelineTemplateItem>
     );
 
-  const renderList = (title: string, entries: TTemplateEntry[]) =>
+  const renderList = (
+    step: TTemplateStep,
+    title: string,
+    entries: TTemplateEntry[],
+  ) =>
     renderItem(
+      step,
       title,
       entries.length > 0,
       <STimelineTemplateList>
@@ -81,14 +93,21 @@ const TimelineTemplateCv = ({
         cvColors={colors}
         basis={getSectionSize(sizes, "rows", "header", 22)}
       >
-        <STimelineTemplatePhoto cvColors={colors}>
+        <STimelineTemplatePhoto
+          {...cvStep("personal-information")}
+          cvColors={colors}
+        >
           <TemplatePhotoContent
             photo={photo}
             initials={initials}
             alt={fullName}
           />
         </STimelineTemplatePhoto>
-        {fullName && <STimelineTemplateName>{fullName}</STimelineTemplateName>}
+        {fullName && (
+          <STimelineTemplateName {...cvStep("personal-information")}>
+            {fullName}
+          </STimelineTemplateName>
+        )}
       </STimelineTemplateHeader>
       <STimelineTemplateBody
         cvColors={colors}
@@ -96,31 +115,37 @@ const TimelineTemplateCv = ({
       >
         <STimelineTemplateTrack cvColors={colors}>
           {renderItem(
+            "personal-information",
             "About Me",
             Boolean(aboutMe),
             <STimelineTemplateParagraph>{aboutMe}</STimelineTemplateParagraph>,
           )}
           {renderItem(
+            "work-experience",
             "Experience",
             experience.length > 0,
             <TemplateEntries items={experience} />,
           )}
           {renderItem(
+            "education",
             "Education",
             education.length > 0,
             <TemplateEntries items={education} />,
           )}
           {renderItem(
+            "projects",
             "Projects",
             projects.length > 0,
             <TemplateEntries items={projects} />,
           )}
           {renderItem(
+            "certificates",
             "Certificates",
             certificates.length > 0,
             <TemplateEntries items={certificates} />,
           )}
           {renderItem(
+            "skills",
             "Skills",
             skills.length > 0,
             <TemplateLevels
@@ -131,6 +156,7 @@ const TimelineTemplateCv = ({
             />,
           )}
           {renderItem(
+            "languages",
             "Languages",
             languages.length > 0,
             <TemplateLevels
@@ -141,12 +167,13 @@ const TimelineTemplateCv = ({
             />,
           )}
           {renderItem(
+            "interests",
             "Interests",
             interests.length > 0,
             <TemplateInlineList items={interests} separator=" · " />,
           )}
-          {renderList("Contact", contact)}
-          {renderList("Social Media", socials)}
+          {renderList("personal-information", "Contact", contact)}
+          {renderList("social-media", "Social Media", socials)}
         </STimelineTemplateTrack>
       </STimelineTemplateBody>
     </STimelineTemplate>

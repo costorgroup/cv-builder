@@ -8,7 +8,6 @@ import {
   DataTable,
   Flex,
   Heading,
-  NativeSelect,
   Skeleton,
   Small,
   Strong,
@@ -38,6 +37,7 @@ import {
   SAdminUserPageFacts,
   SAdminUserPageRole,
 } from "@/views/admin-user-page/styles";
+import ValueSelect from "@/components/value-select";
 
 const dateTime = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
@@ -287,7 +287,7 @@ const AdminUserPage = ({ id }: { id: string }) => {
           <>
             {canChangeRole && (
               <SAdminUserPageRole>
-                <NativeSelect
+                <ValueSelect
                   aria-label="Role"
                   size="sm"
                   variant="subtle"

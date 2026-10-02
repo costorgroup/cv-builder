@@ -1,18 +1,28 @@
 import styled from "@emotion/styled";
+import { TOP_NAV_HEIGHT, TOP_NAV_HEIGHT_SM } from "@/components/top-nav/styles";
 import { cvWorkspaceBackground } from "@/layouts/manage-cv-layout/styles";
 
+/**
+ * The page scrolls as a whole, under the frosted top bar. Sets
+ * `--top-nav-gutter`, the padding around everything, and `--dashboard-top`,
+ * where the content starts below the bar. Pages here are often short, so the
+ * bar is fully frosted after a little scroll, not a screen's worth.
+ */
 export const SDashboardLayout = styled.div`
   ${({ theme }) => `
+    --top-nav-gutter: ${theme.spacing(5)};
+    --top-nav-frost-range: ${theme.spacing(15)};
+    --dashboard-top: calc(var(--top-nav-gutter) * 2 + ${TOP_NAV_HEIGHT}px);
     display: flex;
     flex-direction: column;
-    gap: ${theme.spacing(5)};
+    gap: var(--top-nav-gutter);
     min-height: 100vh;
-    padding: ${theme.spacing(5)};
+    padding: 0 var(--top-nav-gutter) var(--top-nav-gutter);
     background-color: ${cvWorkspaceBackground(theme)};
 
     ${theme.breakpoints.down("sm")} {
-      gap: ${theme.spacing(3)};
-      padding: ${theme.spacing(3)};
+      --top-nav-gutter: ${theme.spacing(3)};
+      --dashboard-top: calc(var(--top-nav-gutter) * 2 + ${TOP_NAV_HEIGHT_SM}px);
     }
   `}
 `;
@@ -22,13 +32,30 @@ export const SDashboardLayoutBody = styled.div`
   ${({ theme }) => `
     flex: 1;
     display: grid;
-    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-columns: 480px minmax(0, 1fr);
     align-items: start;
-    gap: ${theme.spacing(5)};
+    gap: var(--top-nav-gutter);
 
     ${theme.breakpoints.down("md")} {
       grid-template-columns: minmax(0, 1fr);
-      gap: ${theme.spacing(3)};
+    }
+  `}
+`;
+
+/**
+ * Holds the side nav in place below the top bar, filling the rest of the
+ * screen, while the page scrolls; the side nav scrolls on its own inside.
+ */
+export const SDashboardLayoutAside = styled.div`
+  ${({ theme }) => `
+    position: sticky;
+    top: var(--dashboard-top);
+    height: calc(100vh - var(--dashboard-top) - var(--top-nav-gutter));
+    min-width: 0;
+
+    ${theme.breakpoints.down("md")} {
+      position: static;
+      height: auto;
     }
   `}
 `;

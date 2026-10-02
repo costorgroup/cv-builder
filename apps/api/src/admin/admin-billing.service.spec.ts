@@ -31,13 +31,11 @@ const setup = (plan = { id: 'plan', key: 'premium', isDefault: false }) => {
       create: track('price.create'),
     },
     subscription: {
-      findUnique: vi
-        .fn()
-        .mockResolvedValue({
-          id: 'sub',
-          organizationId: 'org',
-          overrides: null,
-        }),
+      findUnique: vi.fn().mockResolvedValue({
+        id: 'sub',
+        organizationId: 'org',
+        overrides: null,
+      }),
       update: track('subscription.update'),
     },
     $transaction: vi.fn((operations: Promise<unknown>[]) =>

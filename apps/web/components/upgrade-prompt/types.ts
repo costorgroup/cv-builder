@@ -8,4 +8,9 @@ export type TUpgradePromptProps = {
   /** Where "See plans" goes; the pricing page by default. */
   href?: string;
   className?: string;
+  /**
+   * For wide spots (e.g. the dashboard): an icon, the message and the
+   * actions in one row, instead of the actions under the message.
+   */
+  wide?: boolean;
 };

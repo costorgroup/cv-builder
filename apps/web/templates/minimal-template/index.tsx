@@ -21,6 +21,8 @@ import {
   TemplateLevels,
   useTemplateContent,
   type TTemplateEntry,
+  cvStep,
+  type TTemplateStep,
 } from "@/templates/shared";
 import { minimalTemplateSpec } from "@repo/cv-core";
 import type { TTemplate } from "@/templates/types";
@@ -47,18 +49,30 @@ const MinimalTemplateCv = ({
   } = useTemplateContent();
 
   // One grid row: the label on the left, the content on the right.
-  const renderRow = (title: string, show: boolean, children: ReactNode) =>
+  const renderRow = (
+    step: TTemplateStep,
+    title: string,
+    show: boolean,
+    children: ReactNode,
+  ) =>
     show && (
       <>
-        <SMinimalTemplateLabel cvColors={colors}>{title}</SMinimalTemplateLabel>
-        <SMinimalTemplateContent cvColors={colors}>
+        <SMinimalTemplateLabel {...cvStep(step)} cvColors={colors}>
+          {title}
+        </SMinimalTemplateLabel>
+        <SMinimalTemplateContent {...cvStep(step)} cvColors={colors}>
           {children}
         </SMinimalTemplateContent>
       </>
     );
 
-  const renderList = (title: string, entries: TTemplateEntry[]) =>
+  const renderList = (
+    step: TTemplateStep,
+    title: string,
+    entries: TTemplateEntry[],
+  ) =>
     renderRow(
+      step,
       title,
       entries.length > 0,
       <SMinimalTemplateList cvColors={colors}>
@@ -73,43 +87,53 @@ const MinimalTemplateCv = ({
 
   return (
     <SMinimalTemplate cvColors={colors} typography={typography}>
-      <SMinimalTemplateName cvColors={colors}>
+      <SMinimalTemplateName
+        {...cvStep("personal-information")}
+        cvColors={colors}
+      >
         {firstName} <strong>{lastName}</strong>
       </SMinimalTemplateName>
       <SMinimalTemplateRows
         labelsEnd={getSectionSize(sizes, "columns", "labels", 30)}
       >
         {renderRow(
+          "personal-information",
           "About",
           Boolean(aboutMe),
           <SMinimalTemplateParagraph>{aboutMe}</SMinimalTemplateParagraph>,
         )}
         {renderRow(
+          "work-experience",
           "Experience",
           experience.length > 0,
           <TemplateEntries items={experience} />,
         )}
         {renderRow(
+          "education",
           "Education",
           education.length > 0,
           <TemplateEntries items={education} />,
         )}
         {renderRow(
+          "projects",
           "Projects",
           projects.length > 0,
           <TemplateEntries items={projects} />,
         )}
         {renderRow(
+          "certificates",
           "Certificates",
           certificates.length > 0,
           <TemplateEntries items={certificates} />,
         )}
         {renderRow(
+          "skills",
           "Skills",
           skills.length > 0,
           <TemplateInlineList items={skills} separator=" / " />,
         )}
         {renderRow(
+          "languages",
           "Languages",
           languages.length > 0,
           <TemplateLevels
@@ -120,12 +144,13 @@ const MinimalTemplateCv = ({
           />,
         )}
         {renderRow(
+          "interests",
           "Interests",
           interests.length > 0,
           <TemplateInlineList items={interests} separator=" / " />,
         )}
-        {renderList("Contact", contact)}
-        {renderList("Social", socials)}
+        {renderList("personal-information", "Contact", contact)}
+        {renderList("social-media", "Social", socials)}
       </SMinimalTemplateRows>
     </SMinimalTemplate>
   );

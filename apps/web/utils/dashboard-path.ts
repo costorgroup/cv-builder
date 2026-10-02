@@ -13,6 +13,8 @@ export const SECURITY_PATH = "/dashboard/security";
 export const DEVELOPERS_PATH = "/dashboard/developers";
 /** Embedded builders for other sites. */
 export const EMBEDS_PATH = "/dashboard/embeds";
+/** Where files are kept, and an own bucket. */
+export const STORAGE_PATH = "/dashboard/storage";
 
 /** My CVs for a search and page; both live in the query string. */
 export const myCvsPath = (search: string, page = 1) => {

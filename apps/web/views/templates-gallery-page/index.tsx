@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Button,
-  Flex,
-  NativeSelect,
-  Skeleton,
-  Small,
-  Strong,
-} from "@costor/ui";
+import { Button, Flex, Skeleton, Small, Strong } from "@costor/ui";
 import ButtonLink from "@/components/button-link";
 import TemplatePreview from "@/components/template-preview";
 import { useEntitlements } from "@/providers/entitlements-provider";
@@ -20,6 +13,7 @@ import {
   STemplatesGalleryPageCategory,
   STemplatesGalleryPageGrid,
 } from "@/views/templates-gallery-page/styles";
+import ValueSelect from "@/components/value-select";
 
 /** A new CV that starts on `templateId`. */
 const newCvWith = (templateId: string) =>
@@ -57,7 +51,7 @@ const TemplatesGalleryPage = () => {
         </Small>
         {categories.length > 1 && (
           <STemplatesGalleryPageCategory>
-            <NativeSelect
+            <ValueSelect
               aria-label="Category"
               size="sm"
               variant="subtle"

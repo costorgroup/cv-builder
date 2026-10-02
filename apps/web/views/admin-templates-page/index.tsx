@@ -7,7 +7,6 @@ import {
   Chip,
   DataTable,
   Flex,
-  NativeSelect,
   Skeleton,
   Small,
   Strong,
@@ -31,6 +30,7 @@ import {
   SAdminTemplatesPageName,
   SAdminTemplatesPageThumbnail,
 } from "@/views/admin-templates-page/styles";
+import ValueSelect from "@/components/value-select";
 
 const messageOf = (error: unknown) =>
   error instanceof ApiError
@@ -202,7 +202,7 @@ const AdminTemplatesPage = () => {
       renderCell: ({ row }) =>
         canEdit ? (
           <SAdminTemplatesPageField width={140}>
-            <NativeSelect
+            <ValueSelect
               aria-label={`${row.name} included in`}
               size="sm"
               variant="subtle"
@@ -232,7 +232,7 @@ const AdminTemplatesPage = () => {
       renderCell: ({ row }) =>
         canEdit ? (
           <SAdminTemplatesPageField width={140}>
-            <NativeSelect
+            <ValueSelect
               aria-label={`${row.name} status`}
               size="sm"
               variant="subtle"

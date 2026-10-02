@@ -31,3 +31,15 @@ export const SEmbedsPageColor = styled.div`
     }
   `}
 `;
+
+/** The embed itself, in a frame, as on a customer's page. */
+export const SEmbedsPagePreview = styled.iframe`
+  ${({ theme }) => `
+    display: block;
+    width: 100%;
+    height: 70vh;
+    margin-top: ${theme.spacing(3)};
+    border: 1px solid ${theme.surfaces.divider};
+    border-radius: ${theme.radius.sm};
+  `}
+`;

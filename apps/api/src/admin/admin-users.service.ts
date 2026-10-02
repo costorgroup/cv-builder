@@ -44,10 +44,11 @@ export class AdminUsersService {
           { lastName: { contains: search, mode: 'insensitive' } },
         ],
       }),
-      ...(status && {
-        disabledAt: status === 'disabled' ? { not: null } : null,
+      // Both statuses (or neither) means everyone.
+      ...(status?.length === 1 && {
+        disabledAt: status[0] === 'disabled' ? { not: null } : null,
       }),
-      ...(role && { role }),
+      ...(role?.length && { role: { in: role } }),
     };
     const [users, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({

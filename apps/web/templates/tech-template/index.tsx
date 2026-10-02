@@ -24,6 +24,8 @@ import {
   TemplatePhotoContent,
   useTemplateContent,
   type TTemplateEntry,
+  cvStep,
+  type TTemplateStep,
 } from "@/templates/shared";
 import { techTemplateSpec } from "@repo/cv-core";
 import type { TTemplate } from "@/templates/types";
@@ -46,16 +48,26 @@ const TechTemplateCv = ({ colors, sizes, typography }: TTechTemplateProps) => {
     interests,
   } = useTemplateContent();
 
-  const renderSection = (title: string, show: boolean, children: ReactNode) =>
+  const renderSection = (
+    step: TTemplateStep,
+    title: string,
+    show: boolean,
+    children: ReactNode,
+  ) =>
     show && (
-      <STechTemplateSection>
+      <STechTemplateSection {...cvStep(step)}>
         <STechTemplateHeading cvColors={colors}>{title}</STechTemplateHeading>
         {children}
       </STechTemplateSection>
     );
 
-  const renderList = (title: string, entries: TTemplateEntry[]) =>
+  const renderList = (
+    step: TTemplateStep,
+    title: string,
+    entries: TTemplateEntry[],
+  ) =>
     renderSection(
+      step,
       title,
       entries.length > 0,
       <STechTemplateList cvColors={colors}>
@@ -74,15 +86,19 @@ const TechTemplateCv = ({ colors, sizes, typography }: TTechTemplateProps) => {
         cvColors={colors}
         basis={getSectionSize(sizes, "columns", "sidebar", 32)}
       >
-        <STechTemplatePhoto cvColors={colors}>
+        <STechTemplatePhoto
+          {...cvStep("personal-information")}
+          cvColors={colors}
+        >
           <TemplatePhotoContent
             photo={photo}
             initials={initials}
             alt={fullName}
           />
         </STechTemplatePhoto>
-        {renderList("contact", contact)}
+        {renderList("personal-information", "contact", contact)}
         {renderSection(
+          "skills",
           "stack",
           skills.length > 0,
           <TemplateChips
@@ -92,6 +108,7 @@ const TechTemplateCv = ({ colors, sizes, typography }: TTechTemplateProps) => {
           />,
         )}
         {renderSection(
+          "languages",
           "languages",
           languages.length > 0,
           <TemplateLevels
@@ -103,6 +120,7 @@ const TechTemplateCv = ({ colors, sizes, typography }: TTechTemplateProps) => {
         )}
         {renderSection(
           "interests",
+          "interests",
           interests.length > 0,
           <TemplateChips
             items={interests}
@@ -110,36 +128,46 @@ const TechTemplateCv = ({ colors, sizes, typography }: TTechTemplateProps) => {
             color={colors.accent}
           />,
         )}
-        {renderList("links", socials)}
+        {renderList("social-media", "links", socials)}
       </STechTemplateSidebar>
       <STechTemplateMain
         cvColors={colors}
         basis={getSectionSize(sizes, "columns", "main", 68)}
       >
         {fullName && (
-          <STechTemplateName cvColors={colors}>{fullName}</STechTemplateName>
+          <STechTemplateName
+            {...cvStep("personal-information")}
+            cvColors={colors}
+          >
+            {fullName}
+          </STechTemplateName>
         )}
         {renderSection(
+          "personal-information",
           "about",
           Boolean(aboutMe),
           <STechTemplateParagraph>{aboutMe}</STechTemplateParagraph>,
         )}
         {renderSection(
+          "work-experience",
           "experience",
           experience.length > 0,
           <TemplateEntries items={experience} />,
         )}
         {renderSection(
           "projects",
+          "projects",
           projects.length > 0,
           <TemplateEntries items={projects} />,
         )}
         {renderSection(
           "education",
+          "education",
           education.length > 0,
           <TemplateEntries items={education} />,
         )}
         {renderSection(
+          "certificates",
           "certificates",
           certificates.length > 0,
           <TemplateEntries items={certificates} />,

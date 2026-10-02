@@ -5,12 +5,14 @@ import {
   Alert,
   DataTable,
   Flex,
-  NativeSelect,
   Skeleton,
   Small,
   type TDataTableColumn,
 } from "@costor/ui";
 import { AUDIT_ACTIONS } from "@repo/cv-core";
+import TableFilters, {
+  TableFilterMultiSelect,
+} from "@/components/table-filters";
 import WideTable from "@/components/wide-table";
 import {
   adminBillingApi,
@@ -19,11 +21,7 @@ import {
 } from "@/utils/admin-api";
 import { adminUserPath } from "@/utils/admin-path";
 import { ApiError } from "@/utils/api-client";
-import {
-  SAdminUsersPageFilters,
-  SAdminUsersPageLink,
-} from "@/views/admin-users-page/styles";
-import { SAdminAuditLogPageAction } from "@/views/admin-audit-log-page/styles";
+import { SAdminUsersPageLink } from "@/views/admin-users-page/styles";
 
 /** The newest this many entries are loaded; the table pages through them. */
 const LOADED_ENTRIES = 500;
@@ -118,11 +116,21 @@ const COLUMNS: TDataTableColumn<TEntryRow>[] = [
   { id: "from", key: "from", name: "From" },
 ];
 
-/** Everything the audit log recorded, newest first, filterable by action. */
+/** No filtering: every action. */
+const NO_FILTERS: { actions: string[] } = { actions: [] };
+
+const ACTION_OPTIONS = AUDIT_ACTIONS.map((value) => ({
+  value,
+  label: actionLabel(value),
+}));
+
+/** Everything the audit log recorded, newest first, filterable by actions. */
 const AdminAuditLogPage = () => {
-  const [action, setAction] = useState("");
+  const [actions, setActions] = useState(NO_FILTERS.actions);
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<TAuditLogPage | { error: string }>();
+  // A new list each time the filters apply; this only changes with them.
+  const action = actions.join(",");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -142,6 +150,28 @@ const AdminAuditLogPage = () => {
       });
     return () => controller.abort();
   }, [action]);
+
+  const filters = (
+    <TableFilters
+      value={{ actions }}
+      defaultValue={NO_FILTERS}
+      onChange={(next) => {
+        setActions(next.actions);
+        setPage(1);
+      }}
+      description="Show only these kinds of action. Pick none to see every action."
+    >
+      {(draft, update) => (
+        <TableFilterMultiSelect
+          label="Actions"
+          placeholder="Every action"
+          value={draft.actions}
+          options={ACTION_OPTIONS}
+          onChange={(value) => update({ actions: value })}
+        />
+      )}
+    </TableFilters>
+  );
 
   const renderTable = () => {
     if (!result) {
@@ -163,6 +193,7 @@ const AdminAuditLogPage = () => {
           radius="lg"
           pageSize={PAGE_SIZE}
           title="Audit log"
+          actions={filters}
           description="Important actions, newest first: who did what, to what, and from where."
           searchPlaceholder="Search by action, person or IP"
           page={page}
@@ -174,28 +205,6 @@ const AdminAuditLogPage = () => {
 
   return (
     <Flex direction="column" gap={4}>
-      <SAdminUsersPageFilters gap={3} wrap="wrap" align="center">
-        <SAdminAuditLogPageAction>
-          <NativeSelect
-            aria-label="Action"
-            size="sm"
-            variant="subtle"
-            value={action}
-            options={[
-              { value: "", label: "Every action" },
-              ...AUDIT_ACTIONS.map((value) => ({
-                value,
-                label: actionLabel(value),
-              })),
-            ]}
-            onChange={(_, value) => {
-              setAction(value);
-              setPage(1);
-            }}
-          />
-        </SAdminAuditLogPageAction>
-      </SAdminUsersPageFilters>
-
       {result && !("error" in result) && result.total > result.items.length && (
         <Small color="secondary">
           Only the newest {result.items.length} entries are loaded. Filter by

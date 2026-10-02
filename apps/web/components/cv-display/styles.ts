@@ -1,11 +1,13 @@
 import styled from "@emotion/styled";
+import { CV_STEP_ATTRIBUTE } from "@/templates/shared";
 import { CV_PAGE_HEIGHT_CQW } from "@/templates/shared/styles";
 import type {
   TSCvDisplayDocumentProps,
+  TSCvDisplayPageProps,
   TSCvDisplayVariantProps,
 } from "@/components/cv-display/types";
 
-const variantProps = new Set(["variant"]);
+const variantProps = new Set(["variant", "selectable"]);
 
 // The print variant is laid out at real A4 size (210 × 297 mm), one page per
 // sheet; everything inside scales from the page width, so it matches the preview.
@@ -33,16 +35,49 @@ export const SCvDisplayPageFrame = styled("div", {
   `}
 `;
 
+/**
+ * A page. When `selectable`, the innermost hovered part of the CV (anything
+ * marked with its editor step) gets a tinted box with a border, over its own
+ * background, to show it can be clicked.
+ */
 export const SCvDisplayPage = styled("div", {
   shouldForwardProp: (prop) => !variantProps.has(prop),
-})<TSCvDisplayVariantProps>`
-  ${({ theme, variant }) => `
+})<TSCvDisplayPageProps>`
+  ${({ theme, variant, selectable }) => `
     background-color: ${theme.palette.common.white};
     width: 100%;
     aspect-ratio: 210 / 297;
     overflow: hidden;
     container-type: inline-size;
     box-shadow: ${variant === "print" ? "none" : theme.shadows[5]};
+
+    ${
+      selectable
+        ? `
+    [${CV_STEP_ATTRIBUTE}] {
+      cursor: pointer;
+      border-radius: 0.6cqw;
+      outline: 0.2cqw solid transparent;
+      outline-offset: 0.4cqw;
+      transition: outline-color 0.15s ease;
+    }
+
+    [${CV_STEP_ATTRIBUTE}]:hover:not(:has([${CV_STEP_ATTRIBUTE}]:hover)) {
+      outline-color: ${theme.palette.primary.main};
+      background-image: linear-gradient(
+        color-mix(in srgb, ${theme.palette.primary.main} 10%, transparent),
+        color-mix(in srgb, ${theme.palette.primary.main} 10%, transparent)
+      );
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      [${CV_STEP_ATTRIBUTE}] {
+        transition: none;
+      }
+    }
+  `
+        : ""
+    }
   `}
 `;
 

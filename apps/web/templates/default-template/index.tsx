@@ -24,6 +24,8 @@ import {
   TemplatePhotoContent,
   useTemplateContent,
   type TTemplateEntry,
+  cvStep,
+  type TTemplateStep,
 } from "@/templates/shared";
 import { defaultTemplateSpec } from "@repo/cv-core";
 import type { TTemplate } from "@/templates/types";
@@ -50,9 +52,14 @@ const DefaultTemplateCv = ({
     interests,
   } = useTemplateContent();
 
-  const renderSection = (title: string, show: boolean, children: ReactNode) =>
+  const renderSection = (
+    step: TTemplateStep,
+    title: string,
+    show: boolean,
+    children: ReactNode,
+  ) =>
     show && (
-      <SDefaultTemplateSection>
+      <SDefaultTemplateSection {...cvStep(step)}>
         <SDefaultTemplateHeading cvColors={colors}>
           {title}
         </SDefaultTemplateHeading>
@@ -60,8 +67,13 @@ const DefaultTemplateCv = ({
       </SDefaultTemplateSection>
     );
 
-  const renderList = (title: string, entries: TTemplateEntry[]) =>
+  const renderList = (
+    step: TTemplateStep,
+    title: string,
+    entries: TTemplateEntry[],
+  ) =>
     renderSection(
+      step,
       title,
       entries.length > 0,
       <SDefaultTemplateList>
@@ -80,17 +92,25 @@ const DefaultTemplateCv = ({
         cvColors={colors}
         basis={getSectionSize(sizes, "columns", "left", 40)}
       >
-        <SDefaultTemplatePhoto cvColors={colors}>
+        <SDefaultTemplatePhoto
+          {...cvStep("personal-information")}
+          cvColors={colors}
+        >
           <TemplatePhotoContent
             photo={photo}
             initials={initials}
             alt={fullName}
           />
         </SDefaultTemplatePhoto>
-        {fullName && <SDefaultTemplateName>{fullName}</SDefaultTemplateName>}
-        {renderList("Contact", contact)}
-        {renderList("Social Media", socials)}
+        {fullName && (
+          <SDefaultTemplateName {...cvStep("personal-information")}>
+            {fullName}
+          </SDefaultTemplateName>
+        )}
+        {renderList("personal-information", "Contact", contact)}
+        {renderList("social-media", "Social Media", socials)}
         {renderSection(
+          "skills",
           "Skills",
           skills.length > 0,
           <TemplateLevels
@@ -101,6 +121,7 @@ const DefaultTemplateCv = ({
           />,
         )}
         {renderSection(
+          "languages",
           "Languages",
           languages.length > 0,
           <TemplateLevels
@@ -111,6 +132,7 @@ const DefaultTemplateCv = ({
           />,
         )}
         {renderSection(
+          "interests",
           "Interests",
           interests.length > 0,
           <TemplateInlineList items={interests} separator=", " />,
@@ -121,26 +143,31 @@ const DefaultTemplateCv = ({
         basis={getSectionSize(sizes, "columns", "right", 60)}
       >
         {renderSection(
+          "personal-information",
           "About Me",
           Boolean(aboutMe),
           <SDefaultTemplateParagraph>{aboutMe}</SDefaultTemplateParagraph>,
         )}
         {renderSection(
+          "work-experience",
           "Experience",
           experience.length > 0,
           <TemplateEntries items={experience} />,
         )}
         {renderSection(
+          "education",
           "Education",
           education.length > 0,
           <TemplateEntries items={education} />,
         )}
         {renderSection(
+          "projects",
           "Projects",
           projects.length > 0,
           <TemplateEntries items={projects} />,
         )}
         {renderSection(
+          "certificates",
           "Certificates",
           certificates.length > 0,
           <TemplateEntries items={certificates} />,

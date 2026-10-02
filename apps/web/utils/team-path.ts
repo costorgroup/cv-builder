@@ -8,6 +8,7 @@ export const teamSubscriptionPath = (slug: string) =>
 export const teamSettingsPath = (slug: string) => `${teamPath(slug)}/settings`;
 export const teamApiKeysPath = (slug: string) => `${teamPath(slug)}/api-keys`;
 export const teamEmbedsPath = (slug: string) => `${teamPath(slug)}/embeds`;
+export const teamStoragePath = (slug: string) => `${teamPath(slug)}/storage`;
 
 /** Where an invite email links to. */
 export const invitePath = (token: string) =>

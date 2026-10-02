@@ -37,6 +37,9 @@ export const AUDIT_ACTIONS = [
   "EMBED_CREATED",
   "EMBED_UPDATED",
   "EMBED_DELETED",
+  "STORAGE_CONNECTED",
+  "STORAGE_VERIFIED",
+  "STORAGE_REMOVED",
 ] as const;
 
 export type TAuditAction = (typeof AUDIT_ACTIONS)[number];

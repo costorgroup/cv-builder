@@ -10,6 +10,7 @@ import type { Entitlements } from '../entitlements/entitlements.js';
 import { EntitlementService } from '../entitlements/entitlements.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AssetsService } from '../storage/assets.service.js';
 import { TemplatesService } from '../templates/templates.service.js';
 import { UsageService } from '../usage/usage.service.js';
 import {
@@ -78,6 +79,7 @@ export class CvsService {
     private readonly cvPdf: CvPdfService,
     private readonly audit: AuditService,
     private readonly templates: TemplatesService,
+    private readonly assets: AssetsService,
   ) {}
 
   /** Newest first; `search` matches the CV name. */
@@ -124,7 +126,11 @@ export class CvsService {
     return this.createWithinLimit(
       owner,
       entitlements,
-      { name, data, appearance: next },
+      {
+        name,
+        data: await this.assets.moveInlinePhoto(owner, data),
+        appearance: next,
+      },
       { action: 'CV_CREATED', actor },
     );
   }
@@ -160,19 +166,22 @@ export class CvsService {
         readSavedAppearance(cv.appearance),
       );
     }
-    const contentChanged = dto.data !== undefined || appearance !== undefined;
-    return this.prisma.cv.update({
+    const data =
+      dto.data && (await this.assets.moveInlinePhoto(owner, dto.data));
+    const contentChanged = data !== undefined || appearance !== undefined;
+    const updated = await this.prisma.cv.update({
       where: { id },
       data: {
         name: dto.name,
-        data: dto.data && json(dto.data),
+        data: data && json(data),
         appearance: appearance && json(appearance),
         templateId: appearance?.templateId,
         sizeBytes: contentChanged
-          ? cvSizeBytes(dto.data ?? cv.data, appearance ?? cv.appearance)
+          ? cvSizeBytes(data ?? cv.data, appearance ?? cv.appearance)
           : undefined,
       },
     });
+    return data === undefined ? updated : this.attachFiles(owner, updated);
   }
 
   async remove(
@@ -181,6 +190,7 @@ export class CvsService {
     actor: TAuditActor = ownerActor(owner),
   ) {
     const cv = await this.get(owner, id);
+    await this.assets.removeForCv(id);
     await this.prisma.cv.delete({ where: { id } });
     await this.audit.record({
       actor,
@@ -212,6 +222,22 @@ export class CvsService {
     const entitlements = await this.entitlementsOf(owner);
     await this.assertAllowed(owner, entitlements, next, previous);
     return this.renderPdf(owner, entitlements, { data, appearance: next });
+  }
+
+  /**
+   * Makes the files a saved CV links to its own (copying any another CV
+   * uses, e.g. after duplicating), and stores the links if they changed.
+   */
+  private async attachFiles<T extends { id: string; data: Prisma.JsonValue }>(
+    owner: TCvOwner,
+    cv: T,
+  ): Promise<T> {
+    const data = await this.assets.attach(owner, cv.id, cv.data);
+    if (data === cv.data) return cv;
+    return (await this.prisma.cv.update({
+      where: { id: cv.id },
+      data: { data: json(data) },
+    })) as unknown as T;
   }
 
   private entitlementsOf(owner: TCvOwner) {
@@ -328,6 +354,7 @@ export class CvsService {
         },
       });
     });
+    const saved = await this.attachFiles(owner, cv);
     await this.audit.record({
       actor: audit.actor,
       action: audit.action,
@@ -338,6 +365,6 @@ export class CvsService {
         ...(audit.copyOf && { copyOf: audit.copyOf }),
       },
     });
-    return cv;
+    return saved;
   }
 }

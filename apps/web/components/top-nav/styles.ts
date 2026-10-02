@@ -90,3 +90,68 @@ export const STopNavActions = styled.div`
     }
   `}
 `;
+
+/**
+ * Keeps the top bar in view, `--top-nav-gutter` below the top of the page
+ * (set by the layout). Behind the bar, a frosted layer covers the gutters
+ * above and beside it and a fade below it, so content scrolling under blurs
+ * out instead of showing through sharply. The blur is always on; the tint
+ * over it fades in over the first `--top-nav-frost-range` of scroll (a
+ * screen's height unless the layout sets it), so the page stays clear at the
+ * top. Browsers without scroll timelines show the blur without the tint.
+ */
+export const STopNavFrost = styled.div`
+  ${({ theme }) => `
+    --nav-fade: ${theme.spacing(5)};
+    position: sticky;
+    top: 0;
+    z-index: ${theme.zIndex.appBar};
+    padding-top: var(--top-nav-gutter);
+
+    /* Both layers: behind the bar, over the gutters, fading out below. */
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0 calc(var(--top-nav-gutter) * -1) calc(var(--nav-fade) * -1);
+      z-index: -1;
+      mask-image: linear-gradient(
+        to bottom,
+        #000 calc(100% - var(--nav-fade)),
+        transparent
+      );
+      pointer-events: none;
+    }
+
+    /* The blur, always on. */
+    &::before {
+      backdrop-filter: blur(12px);
+    }
+
+    /* The tint, as the page scrolls. */
+    &::after {
+      background: linear-gradient(
+        to bottom,
+        color-mix(in srgb, ${theme.surfaces.background} 50%, transparent),
+        color-mix(in srgb, ${theme.surfaces.background} 20%, transparent)
+          calc(100% - var(--nav-fade)),
+        transparent
+      );
+      opacity: 0;
+    }
+
+    @supports (animation-timeline: scroll()) {
+      &::after {
+        animation: top-nav-frost-in linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 var(--top-nav-frost-range, 100vh);
+      }
+    }
+
+    @keyframes top-nav-frost-in {
+      to {
+        opacity: 1;
+      }
+    }
+  `}
+`;

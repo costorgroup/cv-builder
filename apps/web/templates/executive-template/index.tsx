@@ -26,6 +26,8 @@ import {
   TemplatePhotoContent,
   useTemplateContent,
   type TTemplateEntry,
+  cvStep,
+  type TTemplateStep,
 } from "@/templates/shared";
 import { executiveTemplateSpec } from "@repo/cv-core";
 import type { TTemplate } from "@/templates/types";
@@ -52,9 +54,14 @@ const ExecutiveTemplateCv = ({
     interests,
   } = useTemplateContent();
 
-  const renderSection = (title: string, show: boolean, children: ReactNode) =>
+  const renderSection = (
+    step: TTemplateStep,
+    title: string,
+    show: boolean,
+    children: ReactNode,
+  ) =>
     show && (
-      <SExecutiveTemplateSection>
+      <SExecutiveTemplateSection {...cvStep(step)}>
         <SExecutiveTemplateHeading cvColors={colors}>
           {title}
         </SExecutiveTemplateHeading>
@@ -62,8 +69,13 @@ const ExecutiveTemplateCv = ({
       </SExecutiveTemplateSection>
     );
 
-  const renderList = (title: string, entries: TTemplateEntry[]) =>
+  const renderList = (
+    step: TTemplateStep,
+    title: string,
+    entries: TTemplateEntry[],
+  ) =>
     renderSection(
+      step,
       title,
       entries.length > 0,
       <SExecutiveTemplateList>
@@ -82,7 +94,10 @@ const ExecutiveTemplateCv = ({
         cvColors={colors}
         basis={getSectionSize(sizes, "rows", "header", 26)}
       >
-        <SExecutiveTemplatePhoto cvColors={colors}>
+        <SExecutiveTemplatePhoto
+          {...cvStep("personal-information")}
+          cvColors={colors}
+        >
           <TemplatePhotoContent
             photo={photo}
             initials={initials}
@@ -90,7 +105,9 @@ const ExecutiveTemplateCv = ({
           />
         </SExecutiveTemplatePhoto>
         {fullName && (
-          <SExecutiveTemplateName>{fullName}</SExecutiveTemplateName>
+          <SExecutiveTemplateName {...cvStep("personal-information")}>
+            {fullName}
+          </SExecutiveTemplateName>
         )}
       </SExecutiveTemplateHeader>
       <SExecutiveTemplateColumns>
@@ -98,8 +115,9 @@ const ExecutiveTemplateCv = ({
           cvColors={colors}
           basis={getSectionSize(sizes, "columns", "aside", 34)}
         >
-          {renderList("Contact", contact)}
+          {renderList("personal-information", "Contact", contact)}
           {renderSection(
+            "skills",
             "Skills",
             skills.length > 0,
             <TemplateLevels
@@ -110,6 +128,7 @@ const ExecutiveTemplateCv = ({
             />,
           )}
           {renderSection(
+            "languages",
             "Languages",
             languages.length > 0,
             <TemplateLevels
@@ -120,17 +139,19 @@ const ExecutiveTemplateCv = ({
             />,
           )}
           {renderSection(
+            "interests",
             "Interests",
             interests.length > 0,
             <TemplateInlineList items={interests} separator=" · " />,
           )}
-          {renderList("Social Media", socials)}
+          {renderList("social-media", "Social Media", socials)}
         </SExecutiveTemplateAside>
         <SExecutiveTemplateMain
           cvColors={colors}
           basis={getSectionSize(sizes, "columns", "main", 66)}
         >
           {renderSection(
+            "personal-information",
             "Executive Summary",
             Boolean(aboutMe),
             <SExecutiveTemplateParagraph>
@@ -138,21 +159,25 @@ const ExecutiveTemplateCv = ({
             </SExecutiveTemplateParagraph>,
           )}
           {renderSection(
+            "work-experience",
             "Experience",
             experience.length > 0,
             <TemplateEntries items={experience} />,
           )}
           {renderSection(
+            "education",
             "Education",
             education.length > 0,
             <TemplateEntries items={education} />,
           )}
           {renderSection(
+            "projects",
             "Projects",
             projects.length > 0,
             <TemplateEntries items={projects} />,
           )}
           {renderSection(
+            "certificates",
             "Certificates",
             certificates.length > 0,
             <TemplateEntries items={certificates} />,

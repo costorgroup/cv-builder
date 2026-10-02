@@ -1,6 +1,14 @@
 "use client";
 
-import { Button, CheckIcon, Chip, Flex, Heading, Small, Text } from "@costor/ui";
+import {
+  Button,
+  CheckIcon,
+  Chip,
+  Flex,
+  Heading,
+  Small,
+  Text,
+} from "@costor/ui";
 import ButtonLink from "@/components/button-link";
 import {
   SPlanCard,

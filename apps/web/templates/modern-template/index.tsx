@@ -24,6 +24,8 @@ import {
   TemplatePhotoContent,
   useTemplateContent,
   type TTemplateEntry,
+  cvStep,
+  type TTemplateStep,
 } from "@/templates/shared";
 import { modernTemplateSpec } from "@repo/cv-core";
 import type { TTemplate } from "@/templates/types";
@@ -52,9 +54,14 @@ const ModernTemplateCv = ({
     interests,
   } = useTemplateContent();
 
-  const renderSection = (title: string, show: boolean, children: ReactNode) =>
+  const renderSection = (
+    step: TTemplateStep,
+    title: string,
+    show: boolean,
+    children: ReactNode,
+  ) =>
     show && (
-      <SModernTemplateSection>
+      <SModernTemplateSection {...cvStep(step)}>
         <SModernTemplateHeading cvColors={colors}>
           {title}
         </SModernTemplateHeading>
@@ -62,8 +69,13 @@ const ModernTemplateCv = ({
       </SModernTemplateSection>
     );
 
-  const renderList = (title: string, entries: TTemplateEntry[]) =>
+  const renderList = (
+    step: TTemplateStep,
+    title: string,
+    entries: TTemplateEntry[],
+  ) =>
     renderSection(
+      step,
       title,
       entries.length > 0,
       <SModernTemplateList>
@@ -82,26 +94,33 @@ const ModernTemplateCv = ({
         cvColors={colors}
         basis={getSectionSize(sizes, "columns", "main", 64)}
       >
-        <SModernTemplateName cvColors={colors}>
+        <SModernTemplateName
+          {...cvStep("personal-information")}
+          cvColors={colors}
+        >
           {firstName}
           <span>{lastName}</span>
         </SModernTemplateName>
         {renderSection(
+          "personal-information",
           "About Me",
           Boolean(aboutMe),
           <SModernTemplateParagraph>{aboutMe}</SModernTemplateParagraph>,
         )}
         {renderSection(
+          "work-experience",
           "Experience",
           experience.length > 0,
           <TemplateEntries items={experience} />,
         )}
         {renderSection(
+          "education",
           "Education",
           education.length > 0,
           <TemplateEntries items={education} />,
         )}
         {renderSection(
+          "projects",
           "Projects",
           projects.length > 0,
           <TemplateEntries items={projects} />,
@@ -111,16 +130,20 @@ const ModernTemplateCv = ({
         cvColors={colors}
         basis={getSectionSize(sizes, "columns", "sidebar", 36)}
       >
-        <SModernTemplatePhoto cvColors={colors}>
+        <SModernTemplatePhoto
+          {...cvStep("personal-information")}
+          cvColors={colors}
+        >
           <TemplatePhotoContent
             photo={photo}
             initials={initials}
             alt={fullName}
           />
         </SModernTemplatePhoto>
-        {renderList("Contact", contact)}
-        {renderList("Social Media", socials)}
+        {renderList("personal-information", "Contact", contact)}
+        {renderList("social-media", "Social Media", socials)}
         {renderSection(
+          "skills",
           "Skills",
           skills.length > 0,
           <TemplateChips
@@ -130,6 +153,7 @@ const ModernTemplateCv = ({
           />,
         )}
         {renderSection(
+          "languages",
           "Languages",
           languages.length > 0,
           <TemplateLevels
@@ -140,6 +164,7 @@ const ModernTemplateCv = ({
           />,
         )}
         {renderSection(
+          "interests",
           "Interests",
           interests.length > 0,
           <TemplateChips
@@ -149,6 +174,7 @@ const ModernTemplateCv = ({
           />,
         )}
         {renderSection(
+          "certificates",
           "Certificates",
           certificates.length > 0,
           <TemplateEntries items={certificates} />,

@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { Button, Flex } from "@costor/ui";
+import { Button, Flex, Menu } from "@costor/ui";
 
 export const SAccountNav = styled(Flex)`
   height: 100%;
@@ -29,6 +29,50 @@ export const SAccountNavTrigger = styled.button`
       outline: 2px solid ${theme.palette.primary.main};
       outline-offset: 2px;
     }
+  `}
+`;
+
+/** No padding of its own: the profile and the dividers run edge to edge. */
+export const SAccountNavMenu = styled(Menu)`
+  && {
+    min-width: 260px;
+    padding: 0;
+  }
+`;
+
+/**
+ * At the top of the account menu, apart from the items: who's signed in,
+ * centered, so it doesn't look like something to click.
+ */
+export const SAccountNavProfile = styled.div`
+  ${({ theme }) => `
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: ${theme.spacing(0.5)};
+    min-width: 0;
+    padding: ${theme.spacing(5, 4, 4)};
+    text-align: center;
+
+    & > :first-child {
+      margin-bottom: ${theme.spacing(2)};
+    }
+
+    & > * {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  `}
+`;
+
+/** A set of items between dividers, with the menu's padding. */
+export const SAccountNavMenuSection = styled.div`
+  ${({ theme }) => `
+    display: flex;
+    flex-direction: column;
+    padding: ${theme.spacing(theme.gap.xs)};
   `}
 `;
 

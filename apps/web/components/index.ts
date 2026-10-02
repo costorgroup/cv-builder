@@ -13,6 +13,8 @@ export { default as CvLocationFields } from "@/components/cv-location-fields";
 export { default as CreateCvMenu } from "@/components/create-cv-menu";
 export { default as ConfirmModal } from "@/components/confirm-modal";
 export { default as TopNav } from "@/components/top-nav";
+export { default as Copyright } from "@/components/copyright";
+export { default as TableFilters } from "@/components/table-filters";
 export { default as SiteNavLinks } from "@/components/site-nav-links";
 export { default as SiteFooter } from "@/components/site-footer";
 export { default as LegalDocument } from "@/components/legal-document";

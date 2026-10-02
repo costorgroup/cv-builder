@@ -45,8 +45,8 @@ const SECTIONS: TLegalSection[] = [
     content: (
       <>
         <p>
-          {SITE_NAME} sets only the cookies below, all first-party (from our
-          own domain).
+          {SITE_NAME} sets only the cookies below, all first-party (from our own
+          domain).
         </p>
         <SLegalDocumentTable>
           <table>
@@ -84,10 +84,10 @@ const SECTIONS: TLegalSection[] = [
     title: "No tracking or advertising cookies",
     content: (
       <p>
-        We don&apos;t use analytics, advertising or social media cookies, and
-        no third party sets cookies through our site. Because we only use
-        strictly necessary and preference cookies, we don&apos;t show a cookie
-        consent banner.
+        We don&apos;t use analytics, advertising or social media cookies, and no
+        third party sets cookies through our site. Because we only use strictly
+        necessary and preference cookies, we don&apos;t show a cookie consent
+        banner.
       </p>
     ),
   },

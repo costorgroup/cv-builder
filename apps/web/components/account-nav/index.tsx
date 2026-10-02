@@ -1,16 +1,14 @@
 "use client";
 
+import { Fragment } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowBottomIcon,
   Avatar,
   Button,
-  FileIcon,
+  Divider,
   Flex,
-  Menu,
   MenuItem,
-  SettingsIcon,
-  UsersIcon,
   Skeleton,
   Small,
   Strong,
@@ -20,27 +18,41 @@ import ButtonLink from "@/components/button-link";
 import { SignOutIcon } from "@/components/account-nav/icons";
 import {
   SAccountNav,
+  SAccountNavMenu,
+  SAccountNavMenuSection,
+  SAccountNavProfile,
   SAccountNavSignIn,
   SAccountNavTrigger,
   SAccountNavUser,
 } from "@/components/account-nav/styles";
 import type { TAccountNavMenuItem } from "@/components/account-nav/types";
 import { useAuth } from "@/providers/auth-provider";
+import type { TSideNavGroup } from "@/components/side-nav/types";
+import {
+  ADMIN_NAV_GROUPS,
+  DASHBOARD_NAV_GROUPS,
+  isAdmin,
+} from "@/layouts/dashboard-layout/nav";
 import { fullName } from "@/utils/auth-api";
-import { ADMIN_PATH } from "@/utils/admin-path";
-import { ACCOUNT_PATH, MY_CVS_PATH } from "@/utils/dashboard-path";
 
-const MENU_ITEMS: TAccountNavMenuItem[] = [
-  { label: "My CVs", href: MY_CVS_PATH, icon: <FileIcon /> },
-  { label: "Settings", href: ACCOUNT_PATH, icon: <SettingsIcon /> },
-  { label: "Sign out", href: "/auth/sign-out", icon: <SignOutIcon />, color: "error" },
-];
+/** A dashboard section, opened at its first page. */
+const groupItem = ({ label, icon, items }: TSideNavGroup) => ({
+  label,
+  icon,
+  href: items[0]?.href ?? "",
+});
 
-/** For platform admins, before signing out. */
-const ADMIN_ITEM: TAccountNavMenuItem = {
-  label: "Admin",
-  href: ADMIN_PATH,
-  icon: <UsersIcon />,
+const DASHBOARD_ITEMS: TAccountNavMenuItem[] =
+  DASHBOARD_NAV_GROUPS.map(groupItem);
+
+/** The admin area's sections, for platform admins only. */
+const ADMIN_ITEMS: TAccountNavMenuItem[] = ADMIN_NAV_GROUPS.map(groupItem);
+
+const SIGN_OUT_ITEM: TAccountNavMenuItem = {
+  label: "Sign out",
+  href: "/auth/sign-out",
+  icon: <SignOutIcon />,
+  color: "error",
 };
 
 /** Sign in / sign up, or the signed-in user with their account menu. */
@@ -70,7 +82,12 @@ export const AccountNav = () => {
         <SAccountNavSignIn as={ButtonLink} href="/auth/sign-in" variant="ghost">
           Sign in
         </SAccountNavSignIn>
-        <Button as={ButtonLink} href="/auth/sign-up" variant="solid" color="primary">
+        <Button
+          as={ButtonLink}
+          href="/auth/sign-up"
+          variant="solid"
+          color="primary"
+        >
           Create account
         </Button>
       </SAccountNav>
@@ -78,12 +95,28 @@ export const AccountNav = () => {
   }
 
   const { user } = auth;
-  // Only a link: the admin area checks the role on the server.
-  const menuItems =
-    user.role === "USER"
-      ? MENU_ITEMS
-      : [...MENU_ITEMS.slice(0, -1), ADMIN_ITEM, ...MENU_ITEMS.slice(-1)];
   const name = fullName(user);
+  // Only links: the admin area checks the role on the server.
+  const sections = [
+    DASHBOARD_ITEMS,
+    ...(isAdmin(user.role) ? [ADMIN_ITEMS] : []),
+    [SIGN_OUT_ITEM],
+  ];
+  const renderItem = (item: TAccountNavMenuItem) => (
+    <MenuItem
+      key={item.href}
+      color={item.color}
+      onClick={() => {
+        close();
+        router.push(item.href);
+      }}
+    >
+      <Flex align="center" gap={2.5}>
+        {item.icon}
+        {item.label}
+      </Flex>
+    </MenuItem>
+  );
   return (
     <SAccountNav align="center">
       <SAccountNavTrigger type="button" {...triggerProps}>
@@ -94,23 +127,21 @@ export const AccountNav = () => {
         </SAccountNavUser>
         <ArrowBottomIcon />
       </SAccountNavTrigger>
-      <Menu {...menuProps}>
-        {menuItems.map((item) => (
-          <MenuItem
-            key={item.href}
-            color={item.color}
-            onClick={() => {
-              close();
-              router.push(item.href);
-            }}
-          >
-            <Flex align="center" gap={2.5}>
-              {item.icon}
-              {item.label}
-            </Flex>
-          </MenuItem>
+      <SAccountNavMenu {...menuProps}>
+        <SAccountNavProfile>
+          <Avatar name={name} size="lg" radius="full" />
+          <Strong>{name}</Strong>
+          <Small color="secondary">{user.email}</Small>
+        </SAccountNavProfile>
+        {sections.map((items) => (
+          <Fragment key={items[0]?.href}>
+            <Divider />
+            <SAccountNavMenuSection>
+              {items.map(renderItem)}
+            </SAccountNavMenuSection>
+          </Fragment>
         ))}
-      </Menu>
+      </SAccountNavMenu>
     </SAccountNav>
   );
 };

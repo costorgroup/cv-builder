@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import { CvDisplay, CvExportModal, ThemeToggle } from "@/components";
+import { CvDisplay, CvExportModal, TopNav } from "@/components";
+import { BackIcon } from "@/layouts/dashboard-layout/icons";
 import { useCvEditorEnv } from "@/providers/cv-editor-env";
 import { CvPlaceholders, CvProvider, useCv } from "@/providers/cv-provider";
 import {
@@ -11,9 +11,11 @@ import {
   SManageCvLayoutCard,
   SManageCvLayoutCompletion,
   SManageCvLayoutNavContent,
-  SManageCvLayoutNavActions,
   SManageCvLayoutBrand,
   SManageCvLayoutCardHeader,
+  SManageCvLayoutCardTitle,
+  SManageCvLayoutBody,
+  SManageCvLayoutNav,
   SManageCvLayoutCardFooter,
   SManageCvLayoutContent,
   SManageCvLayoutPreviewCenter,
@@ -35,7 +37,7 @@ import { ApiError } from "@/utils/api-client";
 import { signInPath } from "@/utils/auth-routes";
 import { cvEditorPath } from "@/utils/cv-editor";
 import { cvsApi } from "@/utils/cvs-api";
-import { MY_CVS_PATH } from "@/utils/dashboard-path";
+import { DASHBOARD_PATH, MY_CVS_PATH } from "@/utils/dashboard-path";
 import { planRestrictionText } from "@/utils/plan-restriction";
 import { PRICING_PATH } from "@/utils/site";
 import {
@@ -66,6 +68,7 @@ import {
 } from "@costor/ui";
 import { usePathname, useSearchParams } from "next/navigation";
 import { findTemplateSpec } from "@repo/cv-core";
+import type { TTemplateStep } from "@/templates/shared";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -74,25 +77,8 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactElement,
 } from "react";
-
-// Tooltip re-measures (and sets state) whenever what `render` returns
-// changes identity, so new content per render loops forever. Each label gets
-// one render function that always returns the same element.
-const navTooltips = new Map<string, () => ReactElement>();
-const navTooltip = (label: string) => {
-  let render = navTooltips.get(label);
-  if (!render) {
-    const content = <Small>{label}</Small>;
-    render = () => content;
-    navTooltips.set(label, render);
-  }
-  return render;
-};
-
-/** The tooltip's Panel, with only a sliver of padding around the label. */
-const NAV_TOOLTIP_PANEL = { style: { padding: "2px 8px" } };
+import { NAV_TOOLTIP_PANEL, navTooltip } from "@/utils/nav-tooltip";
 
 /**
  * The editor: steps, the current step, completion and the live preview.
@@ -104,7 +90,7 @@ export const ManageCvLayoutContent = ({
   cvId,
 }: TManageCvLayoutContentProps) => {
   const env = useCvEditorEnv();
-  const { data, completion, template } = useCv();
+  const { data, completion, template, resolvedFileName } = useCv();
   const [exportOpen, setExportOpen] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
   const shownTemplateId = useRef(template.id);
@@ -131,9 +117,9 @@ export const ManageCvLayoutContent = ({
   const pathname = usePathname();
   const router = useRouter();
 
-  const navItems = useMemo<TManageCvLayoutNavItem[]>(() => {
-    const basePath = (env.editorPath ?? cvEditorPath)(cvId);
+  const basePath = (env.editorPath ?? cvEditorPath)(cvId);
 
+  const navItems = useMemo<TManageCvLayoutNavItem[]>(() => {
     const items: TManageCvLayoutNavItem[] = [
       {
         label: "Templates",
@@ -214,7 +200,7 @@ export const ManageCvLayoutContent = ({
           env.steps?.some((step) => item.href === `${basePath}/${step}`),
         )
       : items;
-  }, [cvId, data, env.editorPath, env.steps]);
+  }, [basePath, data, env.steps]);
 
   const activeItemId = useMemo<number>(() => {
     return navItems.findIndex((item) => item.href === pathname);
@@ -247,81 +233,110 @@ export const ManageCvLayoutContent = ({
     router.push((navItems[activeItemId + 1] as TManageCvLayoutNavItem)?.href);
   }, [isLastStep, canFinish, activeItemId, navItems, router]);
 
+  // Clicking a part of the CV opens the step where it's filled in, if this
+  // editor has that step.
+  const onStepSelect = useCallback(
+    (step: TTemplateStep) => {
+      const item = navItems.find(({ href }) => href === `${basePath}/${step}`);
+      if (item && item.href !== pathname) router.push(item.href);
+    },
+    [basePath, navItems, pathname, router],
+  );
+
+  const showTopNav = env.topNav ?? true;
+
   return (
-    <SManageCvLayout>
-      <SManageCvLayoutCardWrapper>
-        <SManageCvLayoutCard radius="lg">
-          <SManageCvLayoutBrand>
-            {env.brand ?? (
-              <Image src="/logo.png" alt="" width={40} height={40} priority />
-            )}
-          </SManageCvLayoutBrand>
-          <SManageCvLayoutCardHeader>
-            <Heading as="h6">{activeNavItem?.label}</Heading>
-            <Small color="secondary">{activeNavItem?.description}</Small>
-          </SManageCvLayoutCardHeader>
-          <SManageCvLayoutNavContent direction="column" align="center" gap={2}>
-            {navItems.map((item) => {
-              const active = pathname === item.href;
-              return (
-                <Tooltip
-                  key={item.href}
-                  placement="right"
-                  render={navTooltip(item.label)}
-                  slotProps={{ panel: NAV_TOOLTIP_PANEL }}
-                >
-                  <IconButton
-                    size="lg"
-                    variant={active ? "solid" : "ghost"}
-                    color={active ? "primary" : "default"}
-                    aria-label={item.label}
-                    aria-current={active ? "page" : undefined}
-                    onClick={() => router.push(item.href)}
-                  >
-                    {item.icon}
-                  </IconButton>
-                </Tooltip>
-              );
-            })}
-            {(env.themeToggle ?? true) && (
-              <SManageCvLayoutNavActions>
-                <ThemeToggle />
-              </SManageCvLayoutNavActions>
-            )}
-          </SManageCvLayoutNavContent>
-          <SManageCvLayoutContent>{children}</SManageCvLayoutContent>
-          <SManageCvLayoutCardFooter variant="border">
-            <SManageCvLayoutCompletion direction="column">
-              <Small color="secondary">CV COMPLETION</Small>
-              <Flex direction="row" gap={2} align="center">
-                <LinearProgress
-                  value={completion.percent}
-                  max={100}
-                  color={completionColor}
-                  variant="subtle"
-                />
-                <Small>{completion.percent}%</Small>
-              </Flex>
-            </SManageCvLayoutCompletion>
-            <Flex justify="flex-end" gap={2}>
-              <Button disabled={activeItemId === 0} onClick={onBack}>
-                Back
-              </Button>
-              <Button
-                color="primary"
-                disabled={isLastStep && !canFinish}
-                onClick={onNext}
+    <SManageCvLayout topNav={showTopNav}>
+      {showTopNav && (
+        <SManageCvLayoutNav>
+          <TopNav
+            homeHref={DASHBOARD_PATH}
+            title={cvId ? "Edit CV" : "New CV"}
+            description={resolvedFileName}
+          />
+        </SManageCvLayoutNav>
+      )}
+      <SManageCvLayoutBody>
+        <SManageCvLayoutCardWrapper>
+          <SManageCvLayoutCard radius="lg">
+            <SManageCvLayoutCardHeader>
+              <IconButton
+                variant="ghost"
+                onClick={() => router.push(env.exitPath ?? MY_CVS_PATH)}
+                aria-label="Back to your CVs"
               >
-                {isLastStep ? "Finish" : "Continue"}
-              </Button>
-            </Flex>
-          </SManageCvLayoutCardFooter>
-        </SManageCvLayoutCard>
-      </SManageCvLayoutCardWrapper>
+                <BackIcon />
+              </IconButton>
+              <SManageCvLayoutCardTitle>
+                <Heading as="h6">{activeNavItem?.label}</Heading>
+                <Small color="secondary">{activeNavItem?.description}</Small>
+              </SManageCvLayoutCardTitle>
+            </SManageCvLayoutCardHeader>
+            <SManageCvLayoutNavContent
+              direction="column"
+              align="center"
+              gap={2}
+            >
+              {env.brand && (
+                <SManageCvLayoutBrand>{env.brand}</SManageCvLayoutBrand>
+              )}
+              {navItems.map((item) => {
+                const active = pathname === item.href;
+                return (
+                  <Tooltip
+                    key={item.href}
+                    placement="right"
+                    render={navTooltip(item.label)}
+                    slotProps={{ panel: NAV_TOOLTIP_PANEL }}
+                  >
+                    <IconButton
+                      size="lg"
+                      variant={active ? "solid" : "ghost"}
+                      color={active ? "primary" : "default"}
+                      aria-label={item.label}
+                      aria-current={active ? "page" : undefined}
+                      onClick={() => router.push(item.href)}
+                    >
+                      {item.icon}
+                    </IconButton>
+                  </Tooltip>
+                );
+              })}
+            </SManageCvLayoutNavContent>
+            <SManageCvLayoutContent>{children}</SManageCvLayoutContent>
+            <SManageCvLayoutCardFooter variant="border">
+              <SManageCvLayoutCompletion direction="column">
+                <Small color="secondary">CV COMPLETION</Small>
+                <Flex direction="row" gap={2} align="center">
+                  <LinearProgress
+                    value={completion.percent}
+                    max={100}
+                    color={completionColor}
+                    variant="subtle"
+                  />
+                  <Small>{completion.percent}%</Small>
+                </Flex>
+              </SManageCvLayoutCompletion>
+              <Flex justify="flex-end" gap={2}>
+                <Button disabled={activeItemId === 0} onClick={onBack}>
+                  Back
+                </Button>
+                <Button
+                  color="primary"
+                  disabled={isLastStep && !canFinish}
+                  onClick={onNext}
+                >
+                  {isLastStep ? "Finish" : "Continue"}
+                </Button>
+              </Flex>
+            </SManageCvLayoutCardFooter>
+          </SManageCvLayoutCard>
+        </SManageCvLayoutCardWrapper>
+      </SManageCvLayoutBody>
       <SManageCvLayoutPreview ref={previewRef}>
         <SManageCvLayoutPreviewCenter>
           <CvPlaceholders enabled={showPlaceholders}>
-            <CvDisplay />
+            <CvDisplay onStepSelect={onStepSelect} />
           </CvPlaceholders>
         </SManageCvLayoutPreviewCenter>
       </SManageCvLayoutPreview>
@@ -337,9 +352,11 @@ export const ManageCvLayoutContent = ({
 /** Placeholder layout while the saved CV loads. */
 export const ManageCvLayoutSkeleton = () => (
   <SManageCvLayout aria-busy>
-    <SManageCvLayoutCardWrapper>
-      <Skeleton width="100%" height="100%" radius="lg" />
-    </SManageCvLayoutCardWrapper>
+    <SManageCvLayoutBody>
+      <SManageCvLayoutCardWrapper>
+        <Skeleton width="100%" height="100%" radius="lg" />
+      </SManageCvLayoutCardWrapper>
+    </SManageCvLayoutBody>
     <SManageCvLayoutPreview>
       <SManageCvLayoutPreviewCenter>
         <Skeleton

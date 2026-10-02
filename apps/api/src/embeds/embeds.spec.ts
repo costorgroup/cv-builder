@@ -142,12 +142,10 @@ describe('EmbedsService.exchange', () => {
     const sign = vi.fn().mockResolvedValue('embed.jwt');
     const prisma = {
       embedConfig: {
-        findUnique: vi
-          .fn()
-          .mockResolvedValue({
-            ...config(),
-            organization: { deletedAt: null },
-          }),
+        findUnique: vi.fn().mockResolvedValue({
+          ...config(),
+          organization: { deletedAt: null },
+        }),
       },
       embedLaunchToken: {
         findUnique: vi.fn().mockResolvedValue({

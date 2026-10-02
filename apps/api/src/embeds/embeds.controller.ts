@@ -13,7 +13,9 @@ import {
   Query,
   Req,
   StreamableFile,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiCreatedResponse,
@@ -40,6 +42,13 @@ import {
 import { CvsService } from '../cvs/cvs.service.js';
 import { OrganizationRole } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import {
+  PHOTO_UPLOAD,
+  requireFile,
+  type TUploadedFile,
+  UPLOAD_THROTTLE,
+} from '../storage/assets.controller.js';
+import { AssetsService } from '../storage/assets.service.js';
 import {
   EmbedAuthGuard,
   EmbedSession,
@@ -101,6 +110,15 @@ export class AccountEmbedsController {
   ) {
     await this.embeds.remove(await this.organizationId(userId), userId, id);
   }
+
+  /** A launch token to try the embed as its preview user. */
+  @Post(':id/preview')
+  async preview(
+    @Auth() { userId }: TAuthContext,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.embeds.preview(await this.organizationId(userId), id);
+  }
 }
 
 /** A team's embeds; its owners and admins manage them. */
@@ -141,6 +159,12 @@ export class TeamEmbedsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     await this.embeds.remove(team.id, userId, id);
+  }
+
+  /** A launch token to try the embed as its preview user. */
+  @Post(':id/preview')
+  preview(@Team() team: TTeamContext, @Param('id', ParseUUIDPipe) id: string) {
+    return this.embeds.preview(team.id, id);
   }
 }
 
@@ -183,6 +207,7 @@ export class EmbedRuntimeController {
   constructor(
     private readonly embeds: EmbedsService,
     private readonly cvs: CvsService,
+    private readonly assets: AssetsService,
   ) {}
 
   /** Public: who may frame the embed, for its frame-ancestors header. */
@@ -251,6 +276,18 @@ export class EmbedRuntimeController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     await this.cvs.remove(session.owner, id);
+  }
+
+  /** A photo for one of the end user's CVs; returns its link. */
+  @Post('assets/photos')
+  @Throttle(UPLOAD_THROTTLE)
+  @UseGuards(EmbedAuthGuard)
+  @UseInterceptors(PHOTO_UPLOAD)
+  uploadPhoto(
+    @EmbedSession() session: TEmbedSession,
+    @UploadedFile() file: TUploadedFile | undefined,
+  ) {
+    return this.assets.uploadPhoto(session.owner, requireFile(file));
   }
 
   /** A PDF of a saved CV, if the embed offers downloads. */

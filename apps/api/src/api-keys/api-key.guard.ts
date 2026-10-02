@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   SetMetadata,
   UnauthorizedException,
@@ -19,7 +20,7 @@ import {
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { SkipThrottle } from '@nestjs/throttler';
+import { SkipThrottle, type ThrottlerStorage } from '@nestjs/throttler';
 import { PLAN_LIMIT_REACHED, type TApiScope } from '@repo/cv-core';
 import type { Request, Response } from 'express';
 import { EntitlementService } from '../entitlements/entitlements.service.js';
@@ -27,7 +28,7 @@ import { V1Error } from '../public-api/v1.schemas.js';
 import { UsageService } from '../usage/usage.service.js';
 import { bearerTokenOf } from './api-key-format.js';
 import { ApiKeysService, type TApiPrincipal } from './api-keys.service.js';
-import { RateLimiter } from './rate-limiter.js';
+import { RATE_LIMIT_STORAGE } from '../rate-limit/rate-limit.module.js';
 
 const SCOPES_KEY = 'apiScopes';
 
@@ -44,13 +45,13 @@ export type TApiRequest = Request & { apiPrincipal?: TApiPrincipal };
  */
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
-  private readonly limiter = new RateLimiter(API_REQUESTS_PER_MINUTE);
-
   constructor(
     private readonly reflector: Reflector,
     private readonly apiKeys: ApiKeysService,
     private readonly entitlements: EntitlementService,
     private readonly usage: UsageService,
+    // Shared with the other limits, and between API instances when set to.
+    @Inject(RATE_LIMIT_STORAGE) private readonly rateLimits: ThrottlerStorage,
   ) {}
 
   async canActivate(context: ExecutionContext) {
@@ -75,9 +76,15 @@ export class ApiKeyGuard implements CanActivate {
     );
     entitlements.assertCan('api.access');
 
-    const retryAfter = this.limiter.hit(principal.apiKeyId);
-    if (retryAfter > 0) {
-      response.setHeader('Retry-After', String(retryAfter));
+    const { isBlocked, timeToExpire } = await this.rateLimits.increment(
+      principal.apiKeyId,
+      60_000,
+      API_REQUESTS_PER_MINUTE,
+      0,
+      'apiKey',
+    );
+    if (isBlocked) {
+      response.setHeader('Retry-After', String(timeToExpire));
       throw new HttpException(
         `Too many requests: up to ${API_REQUESTS_PER_MINUTE} a minute per key.`,
         HttpStatus.TOO_MANY_REQUESTS,

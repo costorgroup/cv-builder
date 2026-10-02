@@ -136,8 +136,8 @@ importers:
   apps/web:
     dependencies:
       '@costor/ui':
-        specifier: ^2.0.13
-        version: 2.0.13(@emotion/cache@11.14.0)(@emotion/css@11.13.5(supports-color@7.2.0))(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/extensions@3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/pm@3.31.3))(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^2.0.16
+        version: 2.0.16(@emotion/cache@11.14.0)(@emotion/css@11.13.5(supports-color@7.2.0))(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/extensions@3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/pm@3.31.3))(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@emotion/cache':
         specifier: ^11.14.0
         version: 11.14.0
@@ -475,8 +475,8 @@ packages:
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
     engines: {node: '>=0.1.90'}
 
-  '@costor/ui@2.0.13':
-    resolution: {integrity: sha512-xriGKDJHzNMPpmbwypG6C2+lQ7qOF2CkpvapPEaUCx50zOQL+u1josRVPtw4t5ioYMd+Tobf/gBEk9CHxtIfmA==}
+  '@costor/ui@2.0.16':
+    resolution: {integrity: sha512-FBvuh+hhx1UaTS/JSHl99j8MFejZttFHc5DV36a5CIvdWlRl8NnvSX+oDaRO8GylMgaxhsh0Dcawz8UPgaffHg==}
     peerDependencies:
       '@emotion/cache': ^11.0.0
       '@emotion/css': ^11.0.0
@@ -4909,7 +4909,7 @@ snapshots:
   '@colors/colors@1.5.0':
     optional: true
 
-  '@costor/ui@2.0.13(@emotion/cache@11.14.0)(@emotion/css@11.13.5(supports-color@7.2.0))(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/extensions@3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/pm@3.31.3))(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@costor/ui@2.0.16(@emotion/cache@11.14.0)(@emotion/css@11.13.5(supports-color@7.2.0))(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.8)(supports-color@7.2.0))(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/extensions@3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/pm@3.31.3))(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
       '@emotion/cache': 11.14.0
       '@emotion/css': 11.13.5(supports-color@7.2.0)

@@ -6,6 +6,15 @@ import {
   skillLevelLabel,
 } from "@/providers/cv-provider/items";
 import type { TCvSocialMedia } from "@/providers/cv-provider/types";
+import type { TCvEditorStep } from "@repo/cv-core";
+
+/** The editor step where a part of the CV is filled in. */
+export type TTemplateStep = TCvEditorStep;
+
+/** Marks a CV element with its step, so the editor can open it on click. */
+export const CV_STEP_ATTRIBUTE = "data-cv-step";
+
+export const cvStep = (step: TTemplateStep) => ({ [CV_STEP_ATTRIBUTE]: step });
 
 export type TTemplateEntry = { label: string; value: string };
 

@@ -4,11 +4,8 @@ import { usePathname } from "next/navigation";
 import SiteFooter from "@/components/site-footer";
 import SiteNavLinks from "@/components/site-nav-links";
 import TopNav from "@/components/top-nav";
-import {
-  SSiteLayout,
-  SSiteLayoutContent,
-  SSiteLayoutNav,
-} from "@/layouts/site-layout/styles";
+import { STopNavFrost } from "@/components/top-nav/styles";
+import { SSiteLayout, SSiteLayoutContent } from "@/layouts/site-layout/styles";
 import type {
   TSiteLayoutPage,
   TSiteLayoutProps,
@@ -36,11 +33,11 @@ const SiteLayout = ({ children }: TSiteLayoutProps) => {
   return (
     <AuthProvider>
       <SSiteLayout>
-        <SSiteLayoutNav>
+        <STopNavFrost>
           <TopNav homeHref="/" title={title} description={description}>
             <SiteNavLinks />
           </TopNav>
-        </SSiteLayoutNav>
+        </STopNavFrost>
         <SSiteLayoutContent>{children}</SSiteLayoutContent>
         <SiteFooter />
       </SSiteLayout>

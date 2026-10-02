@@ -24,6 +24,8 @@ Status: **proposal, nothing implemented yet.** Written against the code as of
 
 ### Gaps to fix regardless of the SaaS work
 
+All six are fixed (Phases 1, 3, 6, 7 and 8).
+
 1. **`POST /cv/pdf` is unauthenticated** and renders any payload in a fresh Chrome. That is both an abuse/DoS vector and the reason a "download" entitlement can't be enforced today.
 2. **CV `appearance` isn't validated**, so the backend can't enforce premium templates, colour schemes or fonts.
 3. There is **no platform role** or disabled state on `User`.
@@ -622,21 +624,21 @@ Decisions: a team is its own customer, with its own subscription starting on the
 4. ✅ `/embed/[publicKey]` shell (no account or site chrome; brand theme; credit link), `frame-ancestors` per embed from `proxy.ts` (cached a minute) and `frame-ancestors 'self'` + `X-Frame-Options` everywhere else (`next.config.js`), loader `/embed/v1/cv-builder.js` (`CvBuilder.mount`, `relaunch`, `destroy`), `postMessage` protocol (`waiting` → `launch` to our origin only; `ready`, `saved`, `session-expired` to the allowed parent only), or `#launch=<token>` in the frame address.
 5. ✅ `resolveEmbedConfig`: templates limited to published ones the plan includes (an end user can't upgrade), steps in editor order, downloads only with `cv.download.pdf`, our credit unless `embed.whitelabel`. The API enforces the same object on every embed request.
 
-Not done yet: team API keys still get 409 on `/v1/cvs` (they could list embedded users' CVs); an admin view of embeds and external users; a live preview on the Embeds page.
+Follow-ups, done: API keys work with embedded users' CVs through `?externalUserId=` on `/v1/cvs` (required for team keys; unknown users are a 404, so the user limit holds); Admin → Embeds lists every account's embeds with their embedded users and CVs, and an admin can turn one off (audited); the Embeds page previews an embed in a dialog as a reserved `cvb-preview` user that doesn't count toward the plan (customers can't use that id).
 
 ### Phase 7: Storage
-1. `StorageProvider`, `PlatformStorageProvider`, `Asset`, and photo upload endpoint. Lazy migration of data-URL photos.
-2. Storage usage and limits, and the Storage page.
-3. `StorageConfig` with encrypted credentials, a verify flow, and the first external provider (S3).
+1. ✅ `StorageProvider`; our own storage is the local disk (`STORAGE_DIR`, default `apps/api/storage`, git-ignored) or, with `PLATFORM_STORAGE=s3` and `PLATFORM_S3_*`, an S3-compatible bucket shared by every instance (needed with more than one). `Asset` (keys `org/{orgId}/assets/{id}`), `POST /assets/photos` and `POST /embed/v1/assets/photos` (JPEG/PNG/WebP checked by their bytes, 5 MB), `GET /assets/:id` (public to whoever has the link: the random id is the access, since images, embeds and the PDF renderer can't send credentials; immutable cache). The editor shows a picked photo at once and swaps in the stored link once uploaded (falls back to inline if the upload fails). Data-URL photos are moved out on save. A file belongs to the CV saved with it (only its uploader's CVs; another CV's file is copied, e.g. on duplicate), files a CV stops using or deleted CVs' files are removed, unattached uploads are cleared after a day, and an organization's files go when it's deleted. `/print` waits for images before printing.
+2. ✅ `storage.bytes` = CV data + platform files, enforced on upload; the Usage page shows it (the "Saved CVs" count now leaves out embedded users' CVs). The Storage page moves to part 3, where its job is connecting an organization's own bucket.
+3. ✅ `StorageConfig` (one per organization, `storage.external`; settings bucket/region/endpoint/folder; access key and secret encrypted with AES-256-GCM under `STORAGE_ENCRYPTION_KEY`, never returned, only the key's last 4 shown). `S3StorageProvider` without an SDK: Signature V4 checked against AWS's published examples, path-style for custom endpoints (R2, MinIO, Spaces), paged prefix deletes. Verify = write, read back, delete a test file; only a verified config (on a plan that allows it) takes new uploads, files are read from where they were put, and bucket files don't count toward `storage.bytes`. Endpoints on localhost or private networks are refused outside development (SSRF); DNS that resolves to a private address isn't caught yet (Phase 8). Storage page in the dashboard and in teams (owners and admins). Disconnecting keeps the bucket's files but they can no longer be shown; deleting an organization doesn't delete files in its own bucket. Tested end to end against a fake S3; **not yet against a real bucket**.
 
 ### Phase 8: Hardening
-- Review authorization and tenant isolation: grep for `findUnique({ where: { id } })` on tenant tables and add isolation e2e tests.
-- Subscription edge cases: past-due grace, expiry, downgrade mid-period, resubscribe.
-- Deletion policy:
-  - user delete → cascade their personal org, CVs and assets; delete from external storage too; cancel the provider subscription first;
-  - memberships are removed and team orgs require an ownership transfer first;
-  - audit logs keep `actorId` but drop PII from metadata.
-- Embed session expiry, API key expiry and revocation, index review with `EXPLAIN` on the admin list queries.
+- ✅ Authorization and tenant isolation: every id-only lookup reviewed (each is an admin action, the user's own record, the public file link, or follows an ownership check). `test/tenant-isolation.e2e-spec.ts` runs the real app and database and tries another account's CVs (read, change, copy, PDF, delete), team (every team route and billing), API key, embed and uploaded photo, and one embed user's CVs from another, the account owner and the app's own API. `pnpm test:e2e` (fixed to load `.env`; the app's setup is shared through `configureApp`).
+- ✅ Subscriptions: past-due plans keep working for 14 days after the period ends (`PAST_DUE_GRACE_MS`), then fall back to the default plan until paid; canceled plans last to the period end; resubscribing after expiry starts a new checkout. Downgrades and switches are prorated by Paddle (`changePlan`).
+- ✅ Deletion: an account can't be deleted while a paid plan renews or while it owns a team with other members; its personal organization, teams it owns alone, CVs and our stored files go with it; audit entries keep the anonymous id but lose its IP and browser. A team's own bucket keeps its files.
+- ✅ Expiry: embed sessions last 60 minutes, launch tokens a minute, API keys until their expiry or revocation (checked on every request). An hourly housekeeping job clears expired launch tokens, email tokens and sessions, finished invites after 30 days, and old rate-limit counts.
+- ✅ Rate limits shared between API instances with `RATE_LIMIT_STORE=database` (fixed windows in `RateLimitCounter`, one upsert per request), used by both the per-IP limit and the per-API-key limit; tested with two app instances. Memory stays the default for one instance.
+- ✅ SSRF: a customer's storage endpoint is refused if it is, or resolves to, a private address (checked on each provider's first request).
+- ✅ Indexes for the admin lists (users by sign-up, subscriptions by last change, active users) and for housekeeping; a redundant asset index dropped. Still to consider at scale: a trigram index for the users email/name search.
 
 ---
 

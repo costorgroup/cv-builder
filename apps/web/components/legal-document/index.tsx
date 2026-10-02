@@ -27,7 +27,11 @@ export const LegalDocument = ({
       <Small color="secondary">Last updated: {LEGAL_LAST_UPDATED}</Small>
     </SLegalDocumentHeader>
     <SLegalDocumentBody>
-      <SLegalDocumentToc radius="lg" role="navigation" aria-label="On this page">
+      <SLegalDocumentToc
+        radius="lg"
+        role="navigation"
+        aria-label="On this page"
+      >
         {sections.map(({ id, title: sectionTitle }, index) => (
           <SLegalDocumentTocLink key={id} href={`#${id}`}>
             {index + 1}. {sectionTitle}
@@ -36,7 +40,11 @@ export const LegalDocument = ({
       </SLegalDocumentToc>
       <SLegalDocumentContent radius="lg">
         {sections.map(({ id, title: sectionTitle, content }, index) => (
-          <SLegalDocumentSection key={id} id={id} aria-labelledby={`${id}-title`}>
+          <SLegalDocumentSection
+            key={id}
+            id={id}
+            aria-labelledby={`${id}-title`}
+          >
             <Heading as="h4" id={`${id}-title`}>
               {index + 1}. {sectionTitle}
             </Heading>

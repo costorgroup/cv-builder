@@ -10,6 +10,7 @@ import {
   IsString,
   Matches,
   MaxLength,
+  NotEquals,
 } from 'class-validator';
 
 const trim = ({ value }: { value: unknown }) =>
@@ -68,6 +69,10 @@ export class LaunchEmbedDto {
   @IsString()
   @IsNotEmpty({ message: 'externalUserId is required' })
   @MaxLength(200)
+  // Reserved for owners' previews.
+  @NotEquals('cvb-preview', {
+    message: 'externalUserId "cvb-preview" is reserved',
+  })
   externalUserId: string;
 
   @ApiPropertyOptional({ example: 'ana@example.com' })

@@ -39,6 +39,12 @@ export const embedsApi = {
       body,
       authenticated: true,
     }),
+  /** A one-time token to try the embed as its preview user. */
+  preview: (id: string, teamId?: string) =>
+    apiRequest<{ launchToken: string }>(
+      `${base(teamId)}/${encodeURIComponent(id)}/preview`,
+      { authenticated: true },
+    ),
   remove: (id: string, teamId?: string) =>
     apiRequest(`${base(teamId)}/${encodeURIComponent(id)}`, {
       method: "DELETE",

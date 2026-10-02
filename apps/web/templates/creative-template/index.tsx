@@ -26,6 +26,8 @@ import {
   TemplateLevels,
   TemplatePhotoContent,
   useTemplateContent,
+  cvStep,
+  type TTemplateStep,
 } from "@/templates/shared";
 import { creativeTemplateSpec } from "@repo/cv-core";
 import type { TTemplate } from "@/templates/types";
@@ -54,9 +56,14 @@ const CreativeTemplateCv = ({
     interests,
   } = useTemplateContent();
 
-  const renderSection = (title: string, show: boolean, children: ReactNode) =>
+  const renderSection = (
+    step: TTemplateStep,
+    title: string,
+    show: boolean,
+    children: ReactNode,
+  ) =>
     show && (
-      <SCreativeTemplateSection>
+      <SCreativeTemplateSection {...cvStep(step)}>
         <SCreativeTemplateHeading cvColors={colors}>
           {title}
         </SCreativeTemplateHeading>
@@ -65,12 +72,13 @@ const CreativeTemplateCv = ({
     );
 
   const renderStripSection = (
+    step: TTemplateStep,
     title: string,
     show: boolean,
     children: ReactNode,
   ) =>
     show && (
-      <SCreativeTemplateSection>
+      <SCreativeTemplateSection {...cvStep(step)}>
         <SCreativeTemplateStripHeading cvColors={colors}>
           {title}
         </SCreativeTemplateStripHeading>
@@ -84,18 +92,25 @@ const CreativeTemplateCv = ({
         cvColors={colors}
         basis={getSectionSize(sizes, "columns", "strip", 36)}
       >
-        <SCreativeTemplatePhoto cvColors={colors}>
+        <SCreativeTemplatePhoto
+          {...cvStep("personal-information")}
+          cvColors={colors}
+        >
           <TemplatePhotoContent
             photo={photo}
             initials={initials}
             alt={fullName}
           />
         </SCreativeTemplatePhoto>
-        <SCreativeTemplateName cvColors={colors}>
+        <SCreativeTemplateName
+          {...cvStep("personal-information")}
+          cvColors={colors}
+        >
           {firstName}
           <span>{lastName}</span>
         </SCreativeTemplateName>
         {renderStripSection(
+          "personal-information",
           "Get in touch",
           contact.length > 0,
           <SCreativeTemplateStripList>
@@ -105,6 +120,7 @@ const CreativeTemplateCv = ({
           </SCreativeTemplateStripList>,
         )}
         {renderStripSection(
+          "languages",
           "Languages",
           languages.length > 0,
           <TemplateLevels
@@ -115,6 +131,7 @@ const CreativeTemplateCv = ({
           />,
         )}
         {renderStripSection(
+          "interests",
           "Interests",
           interests.length > 0,
           <TemplateInlineList items={interests} separator=", " />,
@@ -125,26 +142,33 @@ const CreativeTemplateCv = ({
         basis={getSectionSize(sizes, "columns", "main", 64)}
       >
         {aboutMe && (
-          <SCreativeTemplateQuote cvColors={colors}>
+          <SCreativeTemplateQuote
+            {...cvStep("personal-information")}
+            cvColors={colors}
+          >
             {aboutMe}
           </SCreativeTemplateQuote>
         )}
         {renderSection(
+          "work-experience",
           "Experience",
           experience.length > 0,
           <TemplateEntries items={experience} />,
         )}
         {renderSection(
+          "education",
           "Education",
           education.length > 0,
           <TemplateEntries items={education} />,
         )}
         {renderSection(
+          "projects",
           "Projects",
           projects.length > 0,
           <TemplateEntries items={projects} />,
         )}
         {renderSection(
+          "skills",
           "Skills",
           skills.length > 0,
           <TemplateChips
@@ -155,11 +179,13 @@ const CreativeTemplateCv = ({
           />,
         )}
         {renderSection(
+          "certificates",
           "Certificates",
           certificates.length > 0,
           <TemplateEntries items={certificates} />,
         )}
         {renderSection(
+          "social-media",
           "Find me online",
           socials.length > 0,
           <SCreativeTemplateChips cvColors={colors}>

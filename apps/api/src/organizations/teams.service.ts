@@ -24,6 +24,7 @@ import {
 } from '../generated/prisma/client.js';
 import { MailService } from '../mail/mail.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AssetsService } from '../storage/assets.service.js';
 import type { TTeamContext } from '../authz/team-access.guard.js';
 
 /** How long an invite link works. */
@@ -80,6 +81,7 @@ export class TeamsService {
     private readonly entitlements: EntitlementService,
     private readonly mail: MailService,
     private readonly audit: AuditService,
+    private readonly assets: AssetsService,
   ) {}
 
   /** The teams a user belongs to, by name. */
@@ -173,6 +175,7 @@ export class TeamsService {
       );
     }
     await this.prisma.organization.delete({ where: { id: team.id } });
+    await this.assets.removeForOrganization(team.id);
     await this.record(userId, team.id, 'TEAM_DELETED', {
       type: 'organization',
       id: team.id,
